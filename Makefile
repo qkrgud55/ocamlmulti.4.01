@@ -15,7 +15,10 @@
 include config/Makefile
 include stdlib/StdlibModules
 
-CAMLC=boot/ocamlrun boot/ocamlc -nostdlib -I boot
+# phc : cross-compile depends on ocaml4.01 installed in your machine
+# phc : debug option -g added
+CAMLC=ocamlc -g -nostdlib -I boot
+#CAMLC=boot/ocamlrun boot/ocamlc -nostdlib -I boot
 CAMLOPT=boot/ocamlrun ./ocamlopt -nostdlib -I stdlib -I otherlibs/dynlink
 COMPFLAGS=-strict-sequence -w +33..39 -warn-error A $(INCLUDES)
 LINKFLAGS=
@@ -114,6 +117,32 @@ defaultentry:
 	@echo "	make world.opt"
 	@echo "	make install"
 	@echo "should work.  But see the file INSTALL for more details."
+
+
+cross-phc:
+	@echo "phc cross-compiles reentrant multi runtime ocamlopt"
+	make runtime
+	make runtimeopt
+	make compilerlibs/ocamlcommon.cma
+	make compilerlibs/ocamloptcomp.cma
+	make driver/optmain.cmo
+	ocamlc -o ocamlopt compilerlibs/ocamlcommon.cma compilerlibs/ocamloptcomp.cma driver/optmain.cmo
+	cd stdlib; make allopt
+# installopt
+	if test -d $(BINDIR); then : ; else mkdir $(BINDIR); fi
+	if test -d $(LIBDIR)/caml; then : ; else mkdir -p $(LIBDIR)/caml; fi
+	if test -d $(COMPLIBDIR); then : ; else mkdir $(COMPLIBDIR); fi
+	cp VERSION $(LIBDIR)/
+	cd byterun; make install
+	cd asmrun; make install
+	cp ocamlopt $(BINDIR)/ocamlopt$(EXE)
+	cd stdlib; $(MAKE) installopt
+	cp asmcomp/*.cmi $(COMPLIBDIR)
+	cp config/Makefile $(LIBDIR)/Makefile.config
+#	for i in $(OTHERLIBRARIES); \
+#	  do (cd otherlibs/$$i; $(MAKE) installopt) || exit $$?; done
+
+
 
 # Recompile the system using the bootstrap compiler
 all: runtime ocamlc ocamllex ocamlyacc ocamltools library ocaml \
@@ -583,9 +612,10 @@ partialclean::
 
 beforedepend:: asmcomp/emit.ml
 
+# phc : cross-compile, debug option
 tools/cvt_emit: tools/cvt_emit.mll
 	cd tools; \
-	$(MAKE) CAMLC="../$(CAMLRUN) ../boot/ocamlc -I ../stdlib" cvt_emit
+	$(MAKE) CAMLC="ocamlc -g -I ../stdlib" cvt_emit
 
 # The "expunge" utility
 

@@ -13,7 +13,8 @@
 
 include ../config/Makefile
 
-CC=$(BYTECC)
+# phc : gdb debug option
+CC=$(BYTECC) -ggdb
 
 COMMONOBJS=\
   interp.o misc.o stacks.o fix_code.o startup.o \

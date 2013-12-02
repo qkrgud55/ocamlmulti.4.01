@@ -13,7 +13,8 @@
 
 include ../config/Makefile
 
-CC=$(NATIVECC)
+# phc : gdb debug option
+CC=$(NATIVECC) -ggdb
 FLAGS=-I../byterun -DCAML_NAME_SPACE -DNATIVE_CODE \
       -DTARGET_$(ARCH) -DSYS_$(SYSTEM) $(IFLEXDIR)
 CFLAGS=$(FLAGS) -O $(NATIVECCCOMPOPTS)

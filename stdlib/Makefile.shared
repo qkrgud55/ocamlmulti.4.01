@@ -14,10 +14,12 @@
 include ../config/Makefile
 RUNTIME=../boot/ocamlrun
 COMPILER=../ocamlc
-CAMLC=$(RUNTIME) $(COMPILER)
+CAMLC=ocamlc -g
 COMPFLAGS=-strict-sequence -w +33..39 -g -warn-error A -nostdlib
 OPTCOMPILER=../ocamlopt
-CAMLOPT=$(RUNTIME) $(OPTCOMPILER)
+# phc : cross-compile, debug option
+CAMLOPT=ocamlrun ../ocamlopt -g
+#CAMLOPT=$(RUNTIME) $(OPTCOMPILER)
 OPTCOMPFLAGS=-warn-error A -nostdlib -g
 CAMLDEP=../boot/ocamlrun ../tools/ocamldep
 
