@@ -11,6 +11,9 @@
 #########################################################################
 
 default:
+	@echo "skipping tests using ocaml"
+
+skip:
 	@for file in *.ml; do \
 	  $(OCAML) $(TOPFLAGS) <$$file 2>&1 \
 	    | grep -v '^        OCaml version' > $$file.result; \

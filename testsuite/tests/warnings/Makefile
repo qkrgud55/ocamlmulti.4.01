@@ -18,7 +18,7 @@ run-all:
 	@for file in *.ml; do \
 	  printf " ... testing '$$file':"; \
 	  F="`basename $$file .ml`"; \
-	  $(OCAMLC) $(FLAGS) -o $(EXECNAME) $$file 2>$$F.result; \
+	  $(OCAMLOPT) $(FLAGS) -o $(EXECNAME) $$file 2>$$F.result; \
 	  $(DIFF) $$F.reference $$F.result >/dev/null \
 	  && echo " => passed" || echo " => failed"; \
 	done;

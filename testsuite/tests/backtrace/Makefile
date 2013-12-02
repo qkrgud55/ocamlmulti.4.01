@@ -17,7 +17,7 @@ ABCDFILES=backtrace.ml
 OTHERFILES=backtrace2.ml raw_backtrace.ml
 
 default:
-	$(MAKE) byte
+	@if $(NATIVE_ONLY); then : else $(MAKE) byte; fi
 	@if $(BYTECODE_ONLY); then : ; else $(MAKE) native; fi
 
 .PHONY: byte

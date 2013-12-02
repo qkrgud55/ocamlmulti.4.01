@@ -28,13 +28,15 @@ common:
 
 .PHONY: run-byte
 run-byte: common
-	@printf " ... testing 'bytecode':"
-	@$(OCAMLC) $(COMPFLAGS) -c tcallback.ml
-	@$(OCAMLC) $(COMPFLAGS) -o ./program -custom unix.cma \
-	           callbackprim.$(O) tcallback.cmo
-	@./program >bytecode.result
-	@$(DIFF) reference bytecode.result \
-	&& echo " => passed" || echo " => failed"
+	@if $(NATIVE_ONLY); then : ; else \
+	  printf " ... testing 'bytecode':"; \
+	  $(OCAMLC) $(COMPFLAGS) -c tcallback.ml; \
+	  $(OCAMLC) $(COMPFLAGS) -o ./program -custom unix.cma \
+	            callbackprim.$(O) tcallback.cmo; \
+	  ./program >bytecode.result; \
+	  $(DIFF) reference bytecode.result \
+	  && echo " => passed" || echo " => failed"; \
+	fi
 
 .PHONY: run-opt
 run-opt: common

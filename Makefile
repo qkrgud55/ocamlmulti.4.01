@@ -124,6 +124,7 @@ cross-phc:
 	make runtime
 	make runtimeopt
 	make compilerlibs/ocamlcommon.cma
+	make compilerlibs/ocamlcommon.cmxa
 	make compilerlibs/ocamloptcomp.cma
 	make driver/optmain.cmo
 	ocamlc -o ocamlopt compilerlibs/ocamlcommon.cma compilerlibs/ocamloptcomp.cma driver/optmain.cmo
@@ -139,6 +140,8 @@ cross-phc:
 	cd stdlib; $(MAKE) installopt
 	cp asmcomp/*.cmi $(COMPLIBDIR)
 	cp config/Makefile $(LIBDIR)/Makefile.config
+	cp utils/*.cmi parsing/*.cmi typing/*.cmi bytecomp/*.cmi driver/*.cmi \
+	   $(COMPLIBDIR)
 #	for i in $(OTHERLIBRARIES); \
 #	  do (cd otherlibs/$$i; $(MAKE) installopt) || exit $$?; done
 

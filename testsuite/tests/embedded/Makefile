@@ -15,12 +15,13 @@ BASEDIR=../..
 .PHONY: default
 default: compile run
 
+# phc : ocamlopt
 .PHONY: compile
 compile: caml
-	@$(OCAMLC) -ccopt -I -ccopt . cmstub.c
-	@$(OCAMLC) -ccopt -I -ccopt . cmmain.c
-	@$(OCAMLC) -c cmcaml.ml
-	@$(OCAMLC) -custom -o program cmstub.$(O) cmcaml.cmo cmmain.$(O)
+	@$(OCAMLOPT) -ccopt -I -ccopt . cmstub.c
+	@$(OCAMLOPT) -ccopt -I -ccopt . cmmain.c
+	@$(OCAMLOPT) -c cmcaml.ml
+	@$(OCAMLOPT) -o program cmstub.$(O) cmcaml.cmx cmmain.$(O)
 
 caml:
 	@mkdir -p caml || :

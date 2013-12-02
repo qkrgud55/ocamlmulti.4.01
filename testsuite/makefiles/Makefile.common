@@ -43,7 +43,7 @@ SET_LD_PATH=CAML_LD_LIBRARY_PATH="$(LD_PATH)"
 
 include $(TOPDIR)/config/Makefile
 
-OCAMLRUN=$(TOPDIR)/boot/ocamlrun$(EXE)
+OCAMLRUN=$(TOPDIR)/bin/ocamlrun$(EXE)
 
 OCFLAGS=-nostdlib -I $(OTOPDIR)/stdlib $(COMPFLAGS)
 
@@ -62,6 +62,7 @@ OCAMLYACC=$(TOPDIR)/yacc/ocamlyacc$(EXE)
 OCAMLBUILD=$(TOPDIR)/_build/ocamlbuild/ocamlbuild.native
 DUMPOBJ=$(OCAMLRUN) $(OTOPDIR)/tool/dumpobj
 BYTECODE_ONLY=[ "$(ARCH)" = "none" -o "$(ASM)" = "none" ]
+NATIVE_ONLY=true
 
 #FORTRAN_COMPILER=
 #FORTRAN_LIBRARY=
