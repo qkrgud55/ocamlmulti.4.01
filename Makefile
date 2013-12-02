@@ -15,11 +15,13 @@
 include config/Makefile
 include stdlib/StdlibModules
 
+# phc : path to ocaml on your machine
+OPAM=/home/phc/.opam/4.01.0
 # phc : cross-compile depends on ocaml4.01 installed in your machine
 # phc : debug option -g added
 CAMLC=ocamlc -g -nostdlib -I boot
 #CAMLC=boot/ocamlrun boot/ocamlc -nostdlib -I boot
-CAMLOPT=boot/ocamlrun ./ocamlopt -nostdlib -I stdlib -I otherlibs/dynlink
+CAMLOPT=./ocamlopt -nostdlib -I stdlib -I otherlibs/dynlink
 COMPFLAGS=-strict-sequence -w +33..39 -warn-error A $(INCLUDES)
 LINKFLAGS=
 
@@ -110,6 +112,7 @@ NATTOPOBJS=$(UTILS) $(PARSING) $(TYPING) $(COMP) $(ASMCOMP) \
 PERVASIVES=$(STDLIB_MODULES) outcometree topdirs toploop
 
 # For users who don't read the INSTALL file
+# phc - runs 'make cross-phc'
 defaultentry:
 	@echo "Please refer to the installation instructions in file INSTALL."
 	@echo "If you've just unpacked the distribution, something like"
@@ -121,13 +124,16 @@ defaultentry:
 
 cross-phc:
 	@echo "phc cross-compiles reentrant multi runtime ocamlopt"
+# copy files from ocaml on your machine
+#	cd $(OPAM)/lib/ocaml; cp $(LIBFILES) $(PREFIX)/boot
 	make runtime
 	make runtimeopt
 	make compilerlibs/ocamlcommon.cma
 	make compilerlibs/ocamlcommon.cmxa
 	make compilerlibs/ocamloptcomp.cma
 	make driver/optmain.cmo
-	ocamlc -o ocamlopt compilerlibs/ocamlcommon.cma compilerlibs/ocamloptcomp.cma driver/optmain.cmo
+	ocamlc -o ocamlopt compilerlibs/ocamlcommon.cma \
+    compilerlibs/ocamloptcomp.cma driver/optmain.cmo
 	cd stdlib; make allopt
 # installopt
 	if test -d $(BINDIR); then : ; else mkdir $(BINDIR); fi
@@ -144,7 +150,6 @@ cross-phc:
 	   $(COMPLIBDIR)
 #	for i in $(OTHERLIBRARIES); \
 #	  do (cd otherlibs/$$i; $(MAKE) installopt) || exit $$?; done
-
 
 
 # Recompile the system using the bootstrap compiler

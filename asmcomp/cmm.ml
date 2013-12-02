@@ -65,8 +65,9 @@ type memory_chunk =
   | Double_u
 
 type operation =
-    Capply of machtype * Debuginfo.t
-  | Cextcall of string * machtype * bool * Debuginfo.t
+    Capply of machtype * Debuginfo.t 
+    (* phc reentrant ctx *)
+  | Cextcall of string * machtype * bool * bool * Debuginfo.t
   | Cload of memory_chunk
   | Calloc
   | Cstore of memory_chunk

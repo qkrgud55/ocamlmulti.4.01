@@ -50,8 +50,9 @@ let chunk = function
 
 let operation = function
   | Capply(ty, d) -> "app" ^ Debuginfo.to_string d
-  | Cextcall(lbl, ty, alloc, d) ->
-      Printf.sprintf "extcall \"%s\"%s" lbl (Debuginfo.to_string d)
+  | Cextcall(lbl, ty, alloc, ctx, d) ->
+      Printf.sprintf "extcall \"%s\"%s%s" lbl
+       (if ctx then "(reentrant)" else "") (Debuginfo.to_string d)
   | Cload Word -> "load"
   | Cload c -> Printf.sprintf "load %s" (chunk c)
   | Calloc -> "alloc"
@@ -123,7 +124,7 @@ let rec expr ppf = function
       List.iter (fun e -> fprintf ppf "@ %a" expr e) el;
       begin match op with
       | Capply (mty, _) -> fprintf ppf "@ %a" machtype mty
-      | Cextcall(_, mty, _, _) -> fprintf ppf "@ %a" machtype mty
+      | Cextcall(_, mty, _, ctx, _) -> fprintf ppf "@ %a" machtype mty
       | _ -> ()
       end;
       fprintf ppf ")@]"
