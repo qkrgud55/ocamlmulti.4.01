@@ -17,16 +17,16 @@ include stdlib/StdlibModules
 
 # phc : cross-compile depends on ocaml4.01 installed in your machine
 # phc : debug option -g added
-CAMLC=ocamlc -g -nostdlib -I boot
+CAMLC=ocamlc -g
 #CAMLC=boot/ocamlrun boot/ocamlc -nostdlib -I boot
-CAMLOPT=boot/ocamlrun ./ocamlopt -nostdlib -I stdlib -I otherlibs/dynlink
+CAMLOPT=ocamlrun ./ocamlopt -nostdlib -I stdlib -I otherlibs/dynlink
 COMPFLAGS=-strict-sequence -w +33..39 -warn-error A $(INCLUDES)
 LINKFLAGS=
 
-CAMLYACC=boot/ocamlyacc
+CAMLYACC=ocamlyacc
 YACCFLAGS=-v
-CAMLLEX=boot/ocamlrun boot/ocamllex
-CAMLDEP=boot/ocamlrun tools/ocamldep
+CAMLLEX=ocamllex
+CAMLDEP=ocamldep
 DEPFLAGS=$(INCLUDES)
 CAMLRUN=byterun/ocamlrun
 SHELL=/bin/sh
@@ -139,6 +139,8 @@ cross-phc:
 	cd stdlib; $(MAKE) installopt
 	cp asmcomp/*.cmi $(COMPLIBDIR)
 	cp config/Makefile $(LIBDIR)/Makefile.config
+	cp utils/*.cmi parsing/*.cmi typing/*.cmi bytecomp/*.cmi driver/*.cmi \
+	   $(COMPLIBDIR)
 #	for i in $(OTHERLIBRARIES); \
 #	  do (cd otherlibs/$$i; $(MAKE) installopt) || exit $$?; done
 

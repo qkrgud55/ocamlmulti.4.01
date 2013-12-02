@@ -20,7 +20,9 @@ compile:
 	@for f in *.ml; do \
 	  F=`basename $$f .ml`; \
 	  rm -f $$F.bytecode $$F.native $$F.native.exe; \
-	  $(OCAMLC) -w a -o $$F.bytecode $$f; \
+	  if $(NATIVE_ONLY); then : ; else \
+	    $(OCAMLC) -w a -o $$F.bytecode $$f; \
+	  fi; \
 	  if $(BYTECODE_ONLY); then : ; else \
 	    $(OCAMLOPT) -w a -o $$F.native$(EXE) $$f; \
 	  fi; \
@@ -31,19 +33,22 @@ compile:
 .PHONY: run
 run:
 	@ulimit -s 1024; \
+	 if $(NATIVE_ONLY); then : ; else \
 	 for f in *.bytecode; do \
-	  printf " ... testing '$$f':"; \
-	  $(OCAMLRUN) ./$$f >$$f.result 2>&1 || true; \
-	  DIFF="$(DIFF)" sh $$f.checker \
-	  && echo " => passed" || echo " => failed"; \
-	  fn=`basename $$f bytecode`native; \
-	  if $(BYTECODE_ONLY) || [ ! -f "$${fn}$(EXE)" ] ; then : ; else \
-	    printf " ... testing '$$fn':"; \
-	    ./$${fn}$(EXE) >$$fn.result 2>&1 || true; \
-	    DIFF="$(DIFF)" sh $$fn.checker \
-	    && echo " => passed" || echo " => failed"; \
-	  fi; \
-	done
+	   printf " ... testing '$$f':"; \
+	   $(OCAMLRUN) ./$$f >$$f.result 2>&1 || true; \
+	   DIFF="$(DIFF)" sh $$f.checker \
+	   && echo " => passed" || echo " => failed"; \
+	 done; \
+	 fi; \
+	 for fn in *.native; do \
+	   if $(BYTECODE_ONLY) ; then : ; else \
+	     printf " ... testing '$$fn':"; \
+	     ./$${fn}$(EXE) >$$fn.result 2>&1 || true; \
+	     DIFF="$(DIFF)" sh $$fn.checker \
+	     && echo " => passed" || echo " => failed"; \
+	   fi; \
+	 done
 
 .PHONY: promote
 promote: defaultpromote
