@@ -13,9 +13,12 @@
 
 include ../../config/Makefile
 
-CAMLC=../../ocamlcomp.sh -I ../unix
-CAMLOPT=../../ocamlcompopt.sh -I ../unix
-MKLIB=../../boot/ocamlrun ../../tools/ocamlmklib
+CAMLC=ocamlc -I ../unix
+# CAMLC=../../ocamlcomp.sh -I ../unix
+CAMLOPT=../../ocamlopt -I ../unix
+# CAMLOPT=../../ocamlcompopt.sh -I ../unix
+MKLIB=ocamlrun ../../tools/ocamlmklib
+# MKLIB=../../boot/ocamlrun ../../tools/ocamlmklib
 COMPFLAGS=-w +33..39 -warn-error A -g
 
 BYTECODE_C_OBJS=st_stubs_b.o

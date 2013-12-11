@@ -23,8 +23,10 @@ default:
 compile: tscanf2_io.cmo
 	@rm -f master.byte master.native master.native.exe
 	@rm -f slave.byte slave.native slave.native.exe
-	@$(OCAMLC) unix.cma tscanf2_io.cmo -o master.byte tscanf2_master.ml
-	@$(OCAMLC) tscanf2_io.cmo -o slave.byte tscanf2_slave.ml
+	@if $(NATIVE_ONLY); then : ; else \
+	  $(OCAMLC) unix.cma tscanf2_io.cmo -o master.byte tscanf2_master.ml; \
+	  $(OCAMLC) tscanf2_io.cmo -o slave.byte tscanf2_slave.ml; \
+	fi
 	@if $(BYTECODE_ONLY); then : ; else \
 	  $(MAKE) tscanf2_io.cmx; \
 	  $(OCAMLOPT) unix.cmxa tscanf2_io.cmx -o master.native$(EXE) \
@@ -33,13 +35,15 @@ compile: tscanf2_io.cmo
 	fi
 
 run:
-	@printf " ... testing with ocamlc"
-	@$(OCAMLRUN) ./master.byte "$(OTOPDIR)/boot/ocamlrun$(EXE) \
+	@if $(NATIVE_ONLY); then : ; else \
+	  printf " ... testing with ocamlc"; \
+	  $(OCAMLRUN) ./master.byte "$(OTOPDIR)/boot/ocamlrun$(EXE) \
 	                                     `$(CYGPATH) ./slave.byte`" \
-	             >result.byte 2>&1
-	@$(DIFF) reference result.byte >/dev/null \
+	             >result.byte 2>&1; \
+	  $(DIFF) reference result.byte >/dev/null; \
+	fi \
 	&& if $(BYTECODE_ONLY); then : ; else \
-	     printf " ocamlopt"; \
+	     printf " ... testing with ocamlopt"; \
 	     ./master.native$(EXE) "`$(CYGPATH) ./slave.native`" \
 	                           >result.native 2>&1; \
 	     $(DIFF) reference result.native >/dev/null; \
