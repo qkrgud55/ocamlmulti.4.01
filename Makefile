@@ -126,7 +126,7 @@ cross-phc:
 	make compilerlibs/ocamlcommon.cma
 	make compilerlibs/ocamloptcomp.cma
 	make driver/optmain.cmo
-	ocamlc -o ocamlopt compilerlibs/ocamlcommon.cma compilerlibs/ocamloptcomp.cma driver/optmain.cmo
+	ocamlc -g -o ocamlopt compilerlibs/ocamlcommon.cma compilerlibs/ocamloptcomp.cma driver/optmain.cmo
 	cd stdlib; make allopt
 # installopt
 	if test -d $(BINDIR); then : ; else mkdir $(BINDIR); fi
@@ -141,9 +141,12 @@ cross-phc:
 	cp config/Makefile $(LIBDIR)/Makefile.config
 	cp utils/*.cmi parsing/*.cmi typing/*.cmi bytecomp/*.cmi driver/*.cmi \
 	   $(COMPLIBDIR)
-#	for i in $(OTHERLIBRARIES); \
-#	  do (cd otherlibs/$$i; $(MAKE) installopt) || exit $$?; done
-
+# extra work for otherlibs, extending testsuite coverage
+	make ocamltools
+	make ocamltoolsopt
+	make otherlibrariesopt
+	cd stdlib; $(MAKE) all
+	make utils/misc.cmx
 
 
 # Recompile the system using the bootstrap compiler

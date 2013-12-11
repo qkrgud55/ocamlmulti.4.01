@@ -409,7 +409,9 @@ let emit_instr fallthrough i =
           `	{emit_jump s}\n`
           end
         end
-    | Lop(Iextcall(s, alloc)) ->
+    | Lop(Iextcall(s, alloc, ctx)) ->
+        if false then (* phc reentrant ctx *)
+          ` movq    %r13, %rdi\n`;
         if alloc then begin
           `	{load_symbol_addr s}, %rax\n`;
           `	{emit_call "caml_c_call"}\n`;

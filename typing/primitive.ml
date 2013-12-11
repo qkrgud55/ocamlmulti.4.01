@@ -18,28 +18,38 @@ type description =
   { prim_name: string;         (* Name of primitive  or C function *)
     prim_arity: int;           (* Number of arguments *)
     prim_alloc: bool;          (* Does it allocates or raise? *)
+    prim_ctx: bool;            (* phc reentrant ctx *)
     prim_native_name: string;  (* Name of C function for the nat. code gen. *)
     prim_native_float: bool }  (* Does the above operate on unboxed floats? *)
 
 let parse_declaration arity decl =
+  let _prim_ctx = List.mem "reentrant" decl in
+  let fold_fun e l = if e="reentrant" then l else e::l in
+  let decl = List.fold_right fold_fun decl [] in
   match decl with
   | name :: "noalloc" :: name2 :: "float" :: _ ->
-      {prim_name = name; prim_arity = arity; prim_alloc = false;
+      {prim_name = name; prim_arity = arity; prim_alloc = false; 
+       prim_ctx = _prim_ctx;
        prim_native_name = name2; prim_native_float = true}
   | name :: "noalloc" :: name2 :: _ ->
       {prim_name = name; prim_arity = arity; prim_alloc = false;
+       prim_ctx = _prim_ctx;
        prim_native_name = name2; prim_native_float = false}
   | name :: name2 :: "float" :: _ ->
       {prim_name = name; prim_arity = arity; prim_alloc = true;
+       prim_ctx = _prim_ctx;
        prim_native_name = name2; prim_native_float = true}
   | name :: "noalloc" :: _ ->
       {prim_name = name; prim_arity = arity; prim_alloc = false;
+       prim_ctx = _prim_ctx;
        prim_native_name = ""; prim_native_float = false}
   | name :: name2 :: _ ->
       {prim_name = name; prim_arity = arity; prim_alloc = true;
+       prim_ctx = _prim_ctx;
        prim_native_name = name2; prim_native_float = false}
   | name :: _ ->
       {prim_name = name; prim_arity = arity; prim_alloc = true;
+       prim_ctx = _prim_ctx;
        prim_native_name = ""; prim_native_float = false}
   | [] ->
       fatal_error "Primitive.parse_declaration"
