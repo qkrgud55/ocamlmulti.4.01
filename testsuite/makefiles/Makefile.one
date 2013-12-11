@@ -57,13 +57,13 @@ compile: $(ML_FILES) $(CMO_FILES) $(MAIN_MODULE).cmo
 
 .PHONY: run
 run:
-	@printf " ... testing with ocamlc"
 	@if $(NATIVE_ONLY); then : ; else \
+	  printf " ... testing with ocamlc"; \
 	  $(MYRUNTIME) ./program.byte$(EXE) $(EXEC_ARGS) >$(MAIN_MODULE).result; \
 	  $(DIFF) $(MAIN_MODULE).reference $(MAIN_MODULE).result >/dev/null; \
 	fi \
 	&& if $(BYTECODE_ONLY); then : ; else \
-	     printf " ocamlopt"; \
+	    printf " ... testing with ocamlopt"; \
 	     ./program.native$(EXE) $(EXEC_ARGS) > $(MAIN_MODULE).result \
 	     && $(DIFF) $(MAIN_MODULE).reference $(MAIN_MODULE).result \
 	                >/dev/null; \

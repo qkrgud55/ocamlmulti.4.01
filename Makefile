@@ -126,7 +126,7 @@ cross-phc:
 	make compilerlibs/ocamlcommon.cma
 	make compilerlibs/ocamloptcomp.cma
 	make driver/optmain.cmo
-	ocamlc -o ocamlopt compilerlibs/ocamlcommon.cma compilerlibs/ocamloptcomp.cma driver/optmain.cmo
+	ocamlc -g -o ocamlopt compilerlibs/ocamlcommon.cma compilerlibs/ocamloptcomp.cma driver/optmain.cmo
 	cd stdlib; make allopt
 # installopt
 	if test -d $(BINDIR); then : ; else mkdir $(BINDIR); fi

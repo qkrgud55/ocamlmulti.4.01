@@ -13,8 +13,10 @@
 
 # Common Makefile for otherlibs on the Unix ports
 
-CAMLC=$(ROOTDIR)/ocamlcomp.sh
-CAMLOPT=$(ROOTDIR)/ocamlcompopt.sh
+CAMLC=ocamlc
+# CAMLC=$(ROOTDIR)/ocamlcomp.sh
+CAMLOPT=$(ROOTDIR)/ocamlopt
+# CAMLOPT=$(ROOTDIR)/ocamlcompopt.sh
 CFLAGS=-I$(ROOTDIR)/byterun -O $(SHAREDCCCOMPOPTS) $(EXTRACFLAGS)
 
 include ../Makefile.shared

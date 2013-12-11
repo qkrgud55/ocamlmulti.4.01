@@ -15,8 +15,10 @@
 
 include ../../config/Makefile
 
-CAMLC=../../boot/ocamlrun ../../ocamlc
-CAMLOPT=../../ocamlcompopt.sh
+CAMLC=ocamlc
+#CAMLC=../../boot/ocamlrun ../../ocamlc
+CAMLOPT=../../ocamlopt
+#CAMLOPT=../../ocamlcompopt.sh
 INCLUDES=-I ../../utils -I ../../typing -I ../../bytecomp -I ../../asmcomp
 COMPFLAGS=-w +33..39 -warn-error A -I ../../stdlib $(INCLUDES)
 
