@@ -831,7 +831,8 @@ let check_bound unsafe dbg a1 a2 k =
 
 let default_prim name =
   { prim_name = name; prim_arity = 0 (*ignored*);
-    prim_alloc = true; prim_native_name = ""; prim_native_float = false }
+    prim_alloc = true; prim_ctx = false;
+    prim_native_name = ""; prim_native_float = false }
 
 let simplif_primitive_32bits = function
     Pbintofint Pint64 -> Pccall (default_prim "caml_int64_of_int")
