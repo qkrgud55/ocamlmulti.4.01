@@ -410,7 +410,7 @@ let emit_instr fallthrough i =
           end
         end
     | Lop(Iextcall(s, alloc, ctx)) ->
-        if false then (* phc reentrant ctx *)
+        if ctx then (* phc reentrant ctx *)
           ` movq    %r13, %rdi\n`;
         if alloc then begin
           `	{load_symbol_addr s}, %rax\n`;

@@ -274,8 +274,8 @@ let rec remove_unit = function
       Clet(id, c1, remove_unit c2)
   | Cop(Capply (mty, dbg), args) ->
       Cop(Capply (typ_void, dbg), args)
-  | Cop(Cextcall(proc, mty, alloc, dbg), args) ->
-      Cop(Cextcall(proc, typ_void, alloc, dbg), args)
+  | Cop(Cextcall(proc, mty, alloc, ctx, dbg), args) ->
+      Cop(Cextcall(proc, typ_void, alloc, ctx, dbg), args)
   | Cexit (_,_) as c -> c
   | Ctuple [] as c -> c
   | c -> Csequence(c, Ctuple [])
@@ -351,7 +351,7 @@ let float_array_ref arr ofs =
   box_float(unboxed_float_array_ref arr ofs)
 
 let addr_array_set arr ofs newval =
-  Cop(Cextcall("caml_modify", typ_void, false, Debuginfo.none),
+  Cop(Cextcall("caml_modify", typ_void, false, false, Debuginfo.none), (* phc todo *)
       [array_indexing log2_size_addr arr ofs; newval])
 let int_array_set arr ofs newval =
   Cop(Cstore Word, [array_indexing log2_size_addr arr ofs; newval])
@@ -378,7 +378,7 @@ let string_length exp =
 
 let lookup_tag obj tag =
   bind "tag" tag (fun tag ->
-    Cop(Cextcall("caml_get_public_method", typ_addr, false, Debuginfo.none),
+    Cop(Cextcall("caml_get_public_method", typ_addr, false, false, Debuginfo.none),
         [obj; tag]))
 
 let lookup_label obj lab =
@@ -406,7 +406,7 @@ let make_alloc_generic set_fn tag wordsize args =
     | e1::el -> Csequence(set_fn (Cvar id) (Cconst_int idx) e1,
                           fill_fields (idx + 2) el) in
     Clet(id,
-         Cop(Cextcall("caml_alloc", typ_addr, true, Debuginfo.none),
+         Cop(Cextcall("caml_alloc", typ_addr, true, false, Debuginfo.none), (* phc todo *)
                  [Cconst_int wordsize; Cconst_int tag]),
          fill_fields 1 args)
   end
@@ -1117,12 +1117,14 @@ let rec transl = function
       | (Pmakeblock(tag, mut), args) ->
           make_alloc tag (List.map transl args)
       | (Pccall prim, args) ->
+          if prim.prim_ctx then print_endline "asmcomp/cmmgen.ml : detected prim_ctx==true" else ();
+          let args = if prim.prim_ctx then (Uconst (Const_base(Const_int 0),None))::args else args in
           if prim.prim_native_float then
             box_float
-              (Cop(Cextcall(prim.prim_native_name, typ_float, false, dbg),
+              (Cop(Cextcall(prim.prim_native_name, typ_float, false, prim.prim_ctx, dbg),
                    List.map transl_unbox_float args))
           else
-            Cop(Cextcall(Primitive.native_name prim, typ_addr, prim.prim_alloc,
+            Cop(Cextcall(Primitive.native_name prim, typ_addr, prim.prim_alloc, prim.prim_ctx,
                          dbg),
                 List.map transl args)
       | (Pmakearray kind, []) ->
@@ -1130,7 +1132,7 @@ let rec transl = function
       | (Pmakearray kind, args) ->
           begin match kind with
             Pgenarray ->
-              Cop(Cextcall("caml_make_array", typ_addr, true, Debuginfo.none),
+              Cop(Cextcall("caml_make_array", typ_addr, true, false, Debuginfo.none), (* phc todo *)
                   [make_alloc 0 (List.map transl args)])
           | Paddrarray | Pintarray ->
               make_alloc 0 (List.map transl args)
@@ -1367,11 +1369,13 @@ and transl_prim_1 p arg dbg =
         | Pnativeint -> "nativeint"
         | Pint32 -> "int32"
         | Pint64 -> "int64" in
+      let ctx = false in (* phc todo - something new!! *)
       box_int bi (Cop(Cextcall(Printf.sprintf "caml_%s_direct_bswap" prim,
-                               typ_int, false, Debuginfo.none),
+                               typ_int, false, ctx, Debuginfo.none),
                       [transl_unbox_int bi arg]))
   | Pbswap16 ->
-      tag_int (Cop(Cextcall("caml_bswap16_direct", typ_int, false,
+      (* phc - confirmed non-reentrant *)
+      tag_int (Cop(Cextcall("caml_bswap16_direct", typ_int, false, false,
                             Debuginfo.none),
                    [untag_int (transl arg)]))
   | _ ->
@@ -1382,7 +1386,8 @@ and transl_prim_2 p arg1 arg2 dbg =
   (* Heap operations *)
     Psetfield(n, ptr) ->
       if ptr then
-        return_unit(Cop(Cextcall("caml_modify", typ_void, false,Debuginfo.none),
+        (* phc todo - ctx true *)
+        return_unit(Cop(Cextcall("caml_modify", typ_void, false, false, Debuginfo.none),
                         [field_address (transl arg1) n; transl arg2]))
       else
         return_unit(set_field (transl arg1) n (transl arg2))
@@ -1878,7 +1883,8 @@ and transl_letrec bindings cont =
   let bsz =
     List.map (fun (id, exp) -> (id, exp, expr_size Ident.empty exp)) bindings in
   let op_alloc prim sz =
-    Cop(Cextcall(prim, typ_addr, true, Debuginfo.none), [int_const sz]) in
+    (* todo - letrec functions require ctx ?? *)
+    Cop(Cextcall(prim, typ_addr, true, false, Debuginfo.none), [int_const sz]) in
   let rec init_blocks = function
     | [] -> fill_nonrec bsz
     | (id, exp, RHS_block sz) :: rem ->
@@ -1896,8 +1902,8 @@ and transl_letrec bindings cont =
   and fill_blocks = function
     | [] -> cont
     | (id, exp, (RHS_block _ | RHS_floatblock _)) :: rem ->
-        let op =
-          Cop(Cextcall("caml_update_dummy", typ_void, false, Debuginfo.none),
+        let op = (* phc todo *)
+          Cop(Cextcall("caml_update_dummy", typ_void, false, false, Debuginfo.none),
               [Cvar id; transl exp]) in
         Csequence(op, fill_blocks rem)
     | (id, exp, RHS_nonrec) :: rem ->

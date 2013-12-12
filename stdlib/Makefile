@@ -23,6 +23,7 @@ allopt-prof: stdlib.p.cmxa std_exit.p.cmx
 installopt: installopt-default installopt-$(PROFILING)
 
 installopt-default:
+	cp *.cmi *.mli *.ml $(LIBDIR)
 	cp stdlib.cmxa stdlib.a std_exit.o *.cmx $(LIBDIR)
 	cd $(LIBDIR); $(RANLIB) stdlib.a
 

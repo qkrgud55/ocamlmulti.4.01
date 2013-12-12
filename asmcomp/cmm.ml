@@ -66,7 +66,7 @@ type memory_chunk =
 
 type operation =
     Capply of machtype * Debuginfo.t
-  | Cextcall of string * machtype * bool * Debuginfo.t
+  | Cextcall of string * machtype * bool * bool * Debuginfo.t (* phc reentrant ctx *)
   | Cload of memory_chunk
   | Calloc
   | Cstore of memory_chunk

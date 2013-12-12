@@ -24,6 +24,7 @@ type description =
 
 let parse_declaration arity decl =
   let _prim_ctx = List.mem "reentrant" decl in
+  let _ = if _prim_ctx then print_endline "typing/prmitive.ml : detected reentrant option" in
   let fold_fun e l = if e="reentrant" then l else e::l in
   let decl = List.fold_right fold_fun decl [] in
   match decl with
