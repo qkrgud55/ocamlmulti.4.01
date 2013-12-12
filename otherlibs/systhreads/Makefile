@@ -19,7 +19,7 @@ CAMLOPT=../../ocamlopt -I ../unix
 # CAMLOPT=../../ocamlcompopt.sh -I ../unix
 MKLIB=ocamlrun ../../tools/ocamlmklib
 # MKLIB=../../boot/ocamlrun ../../tools/ocamlmklib
-COMPFLAGS=-w +33..39 -warn-error A -g
+COMPFLAGS=-w +33..39 -warn-error A -g -I ../../stdlib
 
 BYTECODE_C_OBJS=st_stubs_b.o
 NATIVECODE_C_OBJS=st_stubs_n.o
@@ -91,7 +91,7 @@ installopt:
 .SUFFIXES: .ml .mli .cmo .cmi .cmx
 
 .mli.cmi:
-	$(CAMLC) -c $(COMPFLAGS) $<
+	$(CAMLOPT) -c $(COMPFLAGS) $<
 
 .ml.cmo:
 	$(CAMLC) -c $(COMPFLAGS) $<

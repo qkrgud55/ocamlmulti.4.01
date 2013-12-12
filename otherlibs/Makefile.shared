@@ -20,7 +20,7 @@ include $(ROOTDIR)/config/Makefile
 CC=$(BYTECC)
 CAMLRUN=ocamlrun
 # CAMLRUN=$(ROOTDIR)/boot/ocamlrun
-COMPFLAGS=-w +33..39 -warn-error A -g $(EXTRACAMLFLAGS)
+COMPFLAGS=-w +33..39 -warn-error A -g $(EXTRACAMLFLAGS) -nostdlib -I ../../stdlib
 MKLIB=$(CAMLRUN) $(ROOTDIR)/tools/ocamlmklib
 
 # Variables to be defined by individual libraries:
@@ -79,7 +79,8 @@ clean:: partialclean
 .SUFFIXES: .ml .mli .cmi .cmo .cmx .$(O)
 
 .mli.cmi:
-	$(CAMLC) -c $(COMPFLAGS) $<
+	$(CAMLOPT) -c $(COMPFLAGS) $<
+#	$(CAMLC) -c $(COMPFLAGS) $<
 
 .ml.cmo:
 	$(CAMLC) -c $(COMPFLAGS) $<

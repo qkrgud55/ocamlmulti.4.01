@@ -141,8 +141,12 @@ cross-phc:
 	cp config/Makefile $(LIBDIR)/Makefile.config
 	cp utils/*.cmi parsing/*.cmi typing/*.cmi bytecomp/*.cmi driver/*.cmi \
 	   $(COMPLIBDIR)
-#	for i in $(OTHERLIBRARIES); \
-#	  do (cd otherlibs/$$i; $(MAKE) installopt) || exit $$?; done
+# extra work for otherlibs, extending testsuite coverage
+	make ocamltools
+#	make ocamltoolsopt
+	make otherlibrariesopt_phc
+#	cd stdlib; $(MAKE) all
+#	make utils/misc.cmx
 
 
 
@@ -382,7 +386,6 @@ ocamlc: compilerlibs/ocamlcommon.cma compilerlibs/ocamlbytecomp.cma $(BYTESTART)
 	@chmod +x ocamlcomp.sh
 
 # The native-code compiler
-
 compilerlibs/ocamloptcomp.cma: $(ASMCOMP)
 	$(CAMLC) -a -o $@ $(ASMCOMP)
 partialclean::
@@ -738,6 +741,13 @@ otherlibrariesopt:
 	for i in $(OTHERLIBRARIES); do \
 	  (cd otherlibs/$$i; $(MAKE) allopt) || exit $$?; \
 	done
+
+OTHERLIBRARIES_PHC=unix str num bigarray systhreads threads graph
+otherlibrariesopt_phc:
+	for i in $(OTHERLIBRARIES_PHC); do \
+	  (cd otherlibs/$$i; $(MAKE) allopt) || exit $$?; \
+	done
+
 
 partialclean::
 	for i in $(OTHERLIBRARIES); do \

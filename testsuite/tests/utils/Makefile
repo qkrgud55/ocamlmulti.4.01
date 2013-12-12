@@ -11,10 +11,11 @@
 #########################################################################
 
 BASEDIR=../..
-MODULES=testing misc
+MODULES=testing
+#MODULES=testing misc
 INCLUDES= -I $(OTOPDIR)/utils
 ADD_COMPFLAGS=$(INCLUDES)
-CMX_FILES+="misc.cmo"
+#CMX_FILES+="misc.cmo"
 
 include $(BASEDIR)/makefiles/Makefile.several
 include $(BASEDIR)/makefiles/Makefile.common
