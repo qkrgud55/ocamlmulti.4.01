@@ -1117,7 +1117,7 @@ let rec transl = function
       | (Pmakeblock(tag, mut), args) ->
           make_alloc tag (List.map transl args)
       | (Pccall prim, args) ->
-          if prim.prim_ctx then print_endline "asmcomp/cmmgen.ml : detected prim_ctx==true" else ();
+          (* if prim.prim_ctx then print_endline "asmcomp/cmmgen.ml : detected prim_ctx==true" else (); *)
           let args = if prim.prim_ctx then (Uconst (Const_base(Const_int 0),None))::args else args in
           if prim.prim_native_float then
             box_float

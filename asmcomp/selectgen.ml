@@ -215,7 +215,7 @@ method select_operation op args =
   match (op, args) with
     (Capply(ty, dbg), Cconst_symbol s :: rem) -> (Icall_imm s, rem)
   | (Capply(ty, dbg), _) -> (Icall_ind, args)
-  | (Cextcall(s, ty, alloc, ctx, dbg), _) -> if ctx then print_endline "asmcomp/seletecgen.ml : detected ctx==true" else ();
+  | (Cextcall(s, ty, alloc, ctx, dbg), _) -> (* if ctx then print_endline "asmcomp/seletecgen.ml : detected ctx==true" else (); *)
                                              (Iextcall(s, alloc, ctx), args)  (* phc todo *)
   | (Cload chunk, [arg]) ->
       let (addr, eloc) = self#select_addressing chunk arg in

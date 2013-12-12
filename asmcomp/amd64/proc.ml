@@ -46,10 +46,10 @@ let masm =
     r8          6
     r9          7
     r12         8
-    r13         9
-    r10         10
-    r11         11
-    rbp         12
+    r13         9  -> phc context pointer
+    r10         10 -> 9
+    r11         11 -> 10
+    rbp         12 -> 11
     r14         trap pointer
     r15         allocation pointer
 
@@ -79,10 +79,10 @@ let int_reg_name =
   match Config.ccomp_type with
   | "msvc" ->
       [| "rax"; "rbx"; "rdi"; "rsi"; "rdx"; "rcx"; "r8"; "r9";
-         "r12"; "r13"; "r10"; "r11"; "rbp" |]
+         "r12"; (* "r13"; *) "r10"; "r11"; "rbp" |]
   | _ ->
       [| "%rax"; "%rbx"; "%rdi"; "%rsi"; "%rdx"; "%rcx"; "%r8"; "%r9";
-         "%r12"; "%r13"; "%r10"; "%r11"; "%rbp" |]
+         "%r12"; (* "%r13"; *) "%r10"; "%r11"; "%rbp" |]
 
 let float_reg_name =
   match Config.ccomp_type with
@@ -103,7 +103,7 @@ let register_class r =
   | Addr -> 0
   | Float -> 1
 
-let num_available_registers = [| 13; 16 |]
+let num_available_registers = [| (*13*) 12; 16 |]
 
 let first_available_register = [| 0; 100 |]
 
@@ -117,8 +117,8 @@ let rotate_registers = false
 (* Representation of hard registers by pseudo-registers *)
 
 let hard_int_reg =
-  let v = Array.create 13 Reg.dummy in
-  for i = 0 to 12 do v.(i) <- Reg.at_location Int (Reg i) done;
+  let v = Array.create (* 13 *) 12 Reg.dummy in
+  for i = 0 to (* 12 *) 11 do v.(i) <- Reg.at_location Int (Reg i) done;
   v
 
 let hard_float_reg =
@@ -135,7 +135,7 @@ let phys_reg n =
 let rax = phys_reg 0
 let rcx = phys_reg 5
 let rdx = phys_reg 4
-let rbp = phys_reg 12
+let rbp = phys_reg (*12*)11
 let rxmm15 = phys_reg 115
 
 let stack_slot slot ty =
@@ -179,9 +179,9 @@ let outgoing ofs = Outgoing ofs
 let not_supported ofs = fatal_error "Proc.loc_results: cannot call"
 
 let loc_arguments arg =
-  calling_conventions 0 9 100 109 outgoing arg
+  calling_conventions 0 (*9*)8 100 109 outgoing arg
 let loc_parameters arg =
-  let (loc, ofs) = calling_conventions 0 9 100 109 incoming arg in loc
+  let (loc, ofs) = calling_conventions 0 (*9*)8 100 109 incoming arg in loc
 let loc_results res =
   let (loc, ofs) = calling_conventions 0 0 100 100 not_supported res in loc
 
@@ -250,7 +250,7 @@ let destroyed_at_c_call =
   else
     (* Unix: rbp, rbx, r12-r15 preserved *)
     Array.of_list(List.map phys_reg
-      [0;2;3;4;5;6;7;10;11;
+      [0;2;3;4;5;6;7;(*10;11;*) 9;10;
        100;101;102;103;104;105;106;107;
        108;109;110;111;112;113;114;115])
 
@@ -277,21 +277,21 @@ let destroyed_at_raise = all_phys_regs
 
 let safe_register_pressure = function
     Iextcall(_,_,_) -> if win64 then if fp then 7 else 8 else 0
-  | _ -> if fp then 10 else 11
+  | _ -> (if fp then 10 else 11)-1
 
 let max_register_pressure = function
     Iextcall(_, _,_) ->
       if win64 then
         if fp then [| 7; 10 |]  else [| 8; 10 |]
         else
-        if fp then [| 3; 0 |] else  [| 4; 0 |]
+        if fp then [| 3-1; 0 |] else  [| 4-1; 0 |]
   | Iintop(Idiv | Imod) ->
-    if fp then [| 10; 16 |] else [| 11; 16 |]
+    if fp then [| 10-1; 16 |] else [| 11-1; 16 |]
   | Ialloc _ | Iintop(Icomp _) | Iintop_imm((Idiv|Imod|Icomp _), _) ->
-    if fp then [| 11; 16 |] else [| 12; 16 |]
+    if fp then [| 11-1; 16 |] else [| 12-1; 16 |]
   | Istore(Single, _) ->
-    if fp then [| 12; 15 |] else [| 13; 15 |]
-  | _ -> if fp then [| 12; 16 |] else [| 13; 16 |]
+    if fp then [| 12-1; 15 |] else [| 13-1; 15 |]
+  | _ -> if fp then [| 12-1; 16 |] else [| 13-1; 16 |]
 
 (* Layout of the stack frame *)
 
@@ -311,6 +311,6 @@ let assemble_file infile outfile =
 
 let init () =
   if fp then begin
-    num_available_registers.(0) <- 12
+    num_available_registers.(0) <- 12-1
   end else
-    num_available_registers.(0) <- 13
+    num_available_registers.(0) <- 13-1
