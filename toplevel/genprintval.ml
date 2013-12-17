@@ -66,10 +66,10 @@ module Make(O : OBJ)(EVP : EVALPATH with type valu = O.t) = struct
           if not (O.is_block arg) then
             list := Oval_int (O.obj arg : int) :: !list
                (* Note: this could be a char or a constant constructor... *)
-          else if O.tag arg = Obj.string_tag then
+          else if O.tag arg = Pobj.string_tag then
             list :=
               Oval_string (String.escaped (O.obj arg : string)) :: !list
-          else if O.tag arg = Obj.double_tag then
+          else if O.tag arg = Pobj.double_tag then
             list := Oval_float (O.obj arg : float) :: !list
           else
             list := Oval_constr (Oide_ident "_", []) :: !list

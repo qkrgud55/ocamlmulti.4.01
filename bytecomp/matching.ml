@@ -1361,12 +1361,12 @@ let inline_lazy_force_cond arg loc =
             Lifthenelse(
               (* if (tag == Obj.forward_tag) then varg.(0) else ... *)
               Lprim(Pintcomp Ceq,
-                    [Lvar tag; Lconst(Const_base(Const_int Obj.forward_tag))]),
+                    [Lvar tag; Lconst(Const_base(Const_int Pobj.forward_tag))]),
               Lprim(Pfield 0, [varg]),
               Lifthenelse(
                 (* ... if (tag == Obj.lazy_tag) then Lazy.force varg else ... *)
                 Lprim(Pintcomp Ceq,
-                      [Lvar tag; Lconst(Const_base(Const_int Obj.lazy_tag))]),
+                      [Lvar tag; Lconst(Const_base(Const_int Pobj.lazy_tag))]),
                 Lapply(force_fun, [varg], loc),
                 (* ... arg *)
                   varg))))
@@ -1383,8 +1383,8 @@ let inline_lazy_force_switch arg loc =
              { sw_numconsts = 0; sw_consts = [];
                sw_numblocks = 256;  (* PR#6033 - tag ranges from 0 to 255 *)
                sw_blocks =
-                 [ (Obj.forward_tag, Lprim(Pfield 0, [varg]));
-                   (Obj.lazy_tag,
+                 [ (Pobj.forward_tag, Lprim(Pfield 0, [varg]));
+                   (Pobj.lazy_tag,
                     Lapply(force_fun, [varg], loc)) ];
                sw_failaction = Some varg } ))))
 
