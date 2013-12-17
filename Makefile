@@ -62,7 +62,7 @@ TYPING=typing/ident.cmo typing/path.cmo \
   typing/typedecl.cmo typing/typeclass.cmo \
   typing/typemod.cmo
 
-COMP=bytecomp/lambda.cmo bytecomp/printlambda.cmo \
+COMP=bytecomp/pobj.cmo bytecomp/lambda.cmo bytecomp/printlambda.cmo \
   bytecomp/typeopt.cmo bytecomp/switch.cmo bytecomp/matching.cmo \
   bytecomp/translobj.cmo bytecomp/translcore.cmo \
   bytecomp/translclass.cmo bytecomp/translmod.cmo \
@@ -687,8 +687,8 @@ ocamllex: ocamlyacc ocamlc
 ocamllex.opt: ocamlopt
 	cd lex; $(MAKE) allopt
 
-partialclean::
-	cd lex; $(MAKE) clean
+#partialclean::
+#	cd lex; $(MAKE) clean
 
 alldepend::
 	cd lex; $(MAKE) depend
@@ -696,12 +696,13 @@ alldepend::
 ocamlyacc:
 	cd yacc; $(MAKE) all
 
-clean::
-	cd yacc; $(MAKE) clean
+#clean::
+#	cd yacc; $(MAKE) clean
 
 # Tools
 
-ocamltools: ocamlc ocamlyacc ocamllex asmcomp/cmx_format.cmi
+#ocamltools: ocamlc ocamlyacc ocamllex asmcomp/cmx_format.cmi
+ocamltools: ocamlc asmcomp/cmx_format.cmi
 	cd tools; $(MAKE) all
 
 ocamltoolsopt: ocamlopt
@@ -724,8 +725,8 @@ ocamldoc: ocamlc ocamlyacc ocamllex otherlibraries
 ocamldoc.opt: ocamlc.opt ocamlyacc ocamllex
 	cd ocamldoc && $(MAKE) opt.opt
 
-partialclean::
-	cd ocamldoc && $(MAKE) clean
+#partialclean::
+#	cd ocamldoc && $(MAKE) clean
 
 alldepend::
 	cd ocamldoc && $(MAKE) depend
@@ -746,6 +747,10 @@ OTHERLIBRARIES_PHC=unix str num bigarray systhreads threads graph
 otherlibrariesopt_phc:
 	for i in $(OTHERLIBRARIES_PHC); do \
 	  (cd otherlibs/$$i; $(MAKE) allopt) || exit $$?; \
+	done
+partialclean::
+	for i in $(OTHERLIBRARIES_PHC); do \
+	  (cd otherlibs/$$i; $(MAKE) partialclean); \
 	done
 
 
