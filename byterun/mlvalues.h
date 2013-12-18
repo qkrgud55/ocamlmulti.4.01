@@ -11,6 +11,8 @@
 /*                                                                     */
 /***********************************************************************/
 
+/* $Id: mlvalues.h 12000 2012-01-07 20:55:28Z lefessan $ */
+
 #ifndef CAML_MLVALUES_H
 #define CAML_MLVALUES_H
 
@@ -151,7 +153,8 @@ bits  63    10 9     8 7   0
 #endif
 
 /* The lowest tag for blocks containing no value. */
-#define No_scan_tag 251
+#define tag_shift 4
+#define No_scan_tag (251-tag_shift)
 
 
 /* 1- If tag < No_scan_tag : a tuple of fields.  */
@@ -173,7 +176,7 @@ typedef opcode_t * code_t;
 
 /* Forward_tag: forwarding pointer that the GC may silently shortcut.
    See stdlib/lazy.ml. */
-#define Forward_tag 250
+#define Forward_tag (No_scan_tag-1)
 #define Forward_val(v) Field(v, 0)
 
 /* If tag == Infix_tag : an infix header inside a closure */
@@ -181,12 +184,12 @@ typedef opcode_t * code_t;
 /* Infix_tag must be 1 modulo 4 and infix headers can only occur in blocks
    with tag Closure_tag (see compact.c). */
 
-#define Infix_tag 249
+#define Infix_tag (No_scan_tag-2)
 #define Infix_offset_hd(hd) (Bosize_hd(hd))
 #define Infix_offset_val(v) Infix_offset_hd(Hd_val(v))
 
 /* Another special case: objects */
-#define Object_tag 248
+#define Object_tag (No_scan_tag-3)
 #define Class_val(val) Field((val), 0)
 #define Oid_val(val) Long_val(Field((val), 1))
 CAMLextern value caml_get_public_method (value obj, value tag);
@@ -197,12 +200,12 @@ CAMLextern value caml_get_public_method (value obj, value tag);
    same method name. */
 
 /* Special case of tuples of fields: closures */
-#define Closure_tag 247
+#define Closure_tag (No_scan_tag-4)
 #define Code_val(val) (((code_t *) (val)) [0])     /* Also an l-value. */
 
 /* This tag is used (with Forward_tag) to implement lazy values.
    See major_gc.c and stdlib/lazy.ml. */
-#define Lazy_tag 246
+#define Lazy_tag (No_scan_tag-5)
 
 /* Another special case: variants */
 CAMLextern value caml_hash_variant(char const * tag);
@@ -219,15 +222,15 @@ CAMLextern value caml_hash_variant(char const * tag);
 /* Abstract things.  Their contents is not traced by the GC; therefore they
    must not contain any [value].
 */
-#define Abstract_tag 251
+#define Abstract_tag (No_scan_tag)
 
 /* Strings. */
-#define String_tag 252
+#define String_tag (No_scan_tag+1)
 #define String_val(x) ((char *) Bp_val(x))
 CAMLextern mlsize_t caml_string_length (value);   /* size in bytes */
 
 /* Floating-point numbers. */
-#define Double_tag 253
+#define Double_tag (No_scan_tag+2)
 #define Double_wosize ((sizeof(double) / sizeof(value)))
 #ifndef ARCH_ALIGN_DOUBLE
 #define Double_val(v) (* (double *)(v))
@@ -240,7 +243,7 @@ CAMLextern void caml_Store_double_val (value,double);
 #endif
 
 /* Arrays of floating-point numbers. */
-#define Double_array_tag 254
+#define Double_array_tag (No_scan_tag+3)
 #define Double_field(v,i) Double_val((value)((double *)(v) + (i)))
 #define Store_double_field(v,i,d) do{ \
   mlsize_t caml__temp_i = (i); \
@@ -256,7 +259,7 @@ CAMLextern int caml_is_double_array (value);   /* 0 is false, 1 is true */
    followed by raw data.  The contents of custom blocks is not traced by
    the GC; therefore, they must not contain any [value].
    See [custom.h] for operations on method suites. */
-#define Custom_tag 255
+#define Custom_tag (No_scan_tag+4)
 #define Data_custom_val(v) ((void *) &Field((v), 1))
 struct custom_operations;       /* defined in [custom.h] */
 
