@@ -82,7 +82,7 @@ clean::
 
 # Dependencies on the compiler
 $(OBJS) std_exit.cmo: $(COMPILER)
-$(OBJS:.cmo=.cmi) std_exit.cmi: $(COMPILER)
+$(OBJS:.cmo=.cmi) std_exit.cmi: $(OPTCOMPILER)
 $(OBJS:.cmo=.cmx) std_exit.cmx: $(OPTCOMPILER)
 $(OBJS:.cmo=.p.cmx) std_exit.p.cmx: $(OPTCOMPILER)
 
