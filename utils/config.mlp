@@ -63,7 +63,7 @@ let load_path = ref ([] : string list)
 
 let interface_suffix = ref ".mli"
 
-let tag_shift = 4
+let tag_shift = 0
 let max_tag = 245 - tag_shift
 (* This is normally the same as in obj.ml, but we have to define it
    separately because it can differ when we're in the middle of a

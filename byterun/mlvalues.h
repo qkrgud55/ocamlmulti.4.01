@@ -153,7 +153,7 @@ bits  63    10 9     8 7   0
 #endif
 
 /* The lowest tag for blocks containing no value. */
-#define tag_shift 4
+#define tag_shift 0
 #define No_scan_tag (251-tag_shift)
 
 
@@ -222,15 +222,15 @@ CAMLextern value caml_hash_variant(char const * tag);
 /* Abstract things.  Their contents is not traced by the GC; therefore they
    must not contain any [value].
 */
-#define Abstract_tag (No_scan_tag)
+#define Abstract_tag 251
 
 /* Strings. */
-#define String_tag (No_scan_tag+1)
+#define String_tag 252
 #define String_val(x) ((char *) Bp_val(x))
 CAMLextern mlsize_t caml_string_length (value);   /* size in bytes */
 
 /* Floating-point numbers. */
-#define Double_tag (No_scan_tag+2)
+#define Double_tag 253
 #define Double_wosize ((sizeof(double) / sizeof(value)))
 #ifndef ARCH_ALIGN_DOUBLE
 #define Double_val(v) (* (double *)(v))
@@ -243,7 +243,7 @@ CAMLextern void caml_Store_double_val (value,double);
 #endif
 
 /* Arrays of floating-point numbers. */
-#define Double_array_tag (No_scan_tag+3)
+#define Double_array_tag 254
 #define Double_field(v,i) Double_val((value)((double *)(v) + (i)))
 #define Store_double_field(v,i,d) do{ \
   mlsize_t caml__temp_i = (i); \
@@ -259,7 +259,7 @@ CAMLextern int caml_is_double_array (value);   /* 0 is false, 1 is true */
    followed by raw data.  The contents of custom blocks is not traced by
    the GC; therefore, they must not contain any [value].
    See [custom.h] for operations on method suites. */
-#define Custom_tag (No_scan_tag+4)
+#define Custom_tag 255
 #define Data_custom_val(v) ((void *) &Field((v), 1))
 struct custom_operations;       /* defined in [custom.h] */
 

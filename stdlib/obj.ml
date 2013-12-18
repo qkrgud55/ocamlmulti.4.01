@@ -37,7 +37,7 @@ let marshal (obj : t) =
 let unmarshal str pos =
   (Marshal.from_string str pos, pos + Marshal.total_size str pos)
 
-let tag_shift = 4
+let tag_shift = 0
 
 let lazy_tag    = 246 - tag_shift
 let closure_tag = 247 - tag_shift
