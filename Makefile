@@ -687,8 +687,8 @@ ocamllex: ocamlyacc ocamlc
 ocamllex.opt: ocamlopt
 	cd lex; $(MAKE) allopt
 
-partialclean::
-	cd lex; $(MAKE) clean
+# partialclean::
+# 	cd lex; $(MAKE) clean
 
 alldepend::
 	cd lex; $(MAKE) depend
@@ -696,12 +696,12 @@ alldepend::
 ocamlyacc:
 	cd yacc; $(MAKE) all
 
-clean::
-	cd yacc; $(MAKE) clean
+# clean::
+# 	cd yacc; $(MAKE) clean
 
 # Tools
 
-ocamltools: ocamlc ocamlyacc ocamllex asmcomp/cmx_format.cmi
+ocamltools: ocamlc asmcomp/cmx_format.cmi
 	cd tools; $(MAKE) all
 
 ocamltoolsopt: ocamlopt
@@ -724,8 +724,8 @@ ocamldoc: ocamlc ocamlyacc ocamllex otherlibraries
 ocamldoc.opt: ocamlc.opt ocamlyacc ocamllex
 	cd ocamldoc && $(MAKE) opt.opt
 
-partialclean::
-	cd ocamldoc && $(MAKE) clean
+# partialclean::
+# 	cd ocamldoc && $(MAKE) clean
 
 alldepend::
 	cd ocamldoc && $(MAKE) depend
@@ -765,8 +765,8 @@ alldepend::
 ocamldebugger: ocamlc ocamlyacc ocamllex otherlibraries
 	cd debugger; $(MAKE) all
 
-partialclean::
-	cd debugger; $(MAKE) clean
+# partialclean::
+# 	cd debugger; $(MAKE) clean
 
 alldepend::
 	cd debugger; $(MAKE) depend
