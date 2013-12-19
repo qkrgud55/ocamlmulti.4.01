@@ -28,7 +28,7 @@ YACCFLAGS=-v
 CAMLLEX=ocamllex
 CAMLDEP=ocamldep
 DEPFLAGS=$(INCLUDES)
-CAMLRUN=byterun/ocamlrun
+CAMLRUN=ocamlrun
 SHELL=/bin/sh
 MKDIR=mkdir -p
 
@@ -111,13 +111,15 @@ PERVASIVES=$(STDLIB_MODULES) outcometree topdirs toploop
 
 # For users who don't read the INSTALL file
 defaultentry:
-	@echo "Please refer to the installation instructions in file INSTALL."
-	@echo "If you've just unpacked the distribution, something like"
-	@echo "	./configure"
-	@echo "	make world.opt"
-	@echo "	make install"
-	@echo "should work.  But see the file INSTALL for more details."
+	@echo "If you've just checkout one of the stable version of commits, run the following commands"
+	@echo "	make init-phc"
+	@echo "	make depend       # not necessary"
+	@echo "	make cross-phc"
+	@echo "should work. "
 
+init-phc:
+	./configure -prefix `pwd`
+	@if test -d compilerlibs; then echo "compilerlibs directory exists"; else mkdir compilerlibs; fi
 
 cross-phc:
 	@echo "phc cross-compiles reentrant multi runtime ocamlopt"
