@@ -459,6 +459,8 @@ CFI_ENDPROC
 
 /* Start the OCaml program */
 
+FUNCTION(G(caml_start_program_r))
+        movq    %rdi, %r13
 FUNCTION(G(caml_start_program))
        CFI_STARTPROC
     /* Save callee-save registers */
@@ -474,10 +476,10 @@ LBL(caml_start_program):
         PUSH_VAR(caml_bottom_of_stack)
     /* Setup alloc ptr and exception ptr */
         LOAD_VAR(caml_young_ptr, %r15)
+        lea     LBL(108)(%rip), %r14
+        pushq   %r14; CFI_ADJUST(8)
         LOAD_VAR(caml_exception_pointer, %r14)
     /* Build an exception handler */
-        lea     LBL(108)(%rip), %r13
-        pushq   %r13; CFI_ADJUST(8)
         pushq   %r14; CFI_ADJUST(8)
         CFI_ADJUST(16)
         movq    %rsp, %r14

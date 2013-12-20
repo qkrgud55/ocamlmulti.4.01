@@ -31,6 +31,7 @@
 #include "printexc.h"
 #include "stack.h"
 #include "sys.h"
+#include "context.h"
 #ifdef HAS_UI
 #include "ui.h"
 #endif
@@ -143,6 +144,7 @@ static void parse_camlrunparam(void)
 struct longjmp_buffer caml_termination_jmpbuf;
 void (*caml_termination_hook)(void *) = NULL;
 
+extern value caml_start_program_r (pctx);
 extern value caml_start_program (void);
 extern void caml_init_ieee_floats (void);
 extern void caml_init_signals (void);
@@ -194,7 +196,7 @@ void caml_main(char **argv)
     if (caml_termination_hook != NULL) caml_termination_hook(NULL);
     return;
   }
-  res = caml_start_program();
+  res = caml_start_program_r(0x0);
   if (Is_exception_result(res))
     caml_fatal_uncaught_exception(Extract_exception(res));
 }
