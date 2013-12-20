@@ -21,7 +21,7 @@ CC=$(BYTECC)
 CAMLRUN=ocamlrun
 # CAMLRUN=$(ROOTDIR)/boot/ocamlrun
 COMPFLAGS=-w +33..39 -warn-error A -g $(EXTRACAMLFLAGS) -nostdlib -I ../../stdlib
-MKLIB=$(CAMLRUN) $(ROOTDIR)/tools/ocamlmklib
+MKLIB=ocamlmklib
 
 # Variables to be defined by individual libraries:
 #LIBNAME=

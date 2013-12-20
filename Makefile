@@ -35,8 +35,7 @@ MKDIR=mkdir -p
 CAMLP4OUT=$(CAMLP4:=out)
 CAMLP4OPT=$(CAMLP4:=opt)
 
-INCLUDES=-I utils -I parsing -I typing -I bytecomp -I asmcomp -I driver \
-	 -I toplevel
+INCLUDES=-I utils -I parsing -I typing -I bytecomp -I asmcomp -I driver
 
 UTILS=utils/misc.cmo utils/tbl.cmo utils/config.cmo \
   utils/clflags.cmo utils/terminfo.cmo utils/ccomp.cmo utils/warnings.cmo \
@@ -144,7 +143,7 @@ cross-phc:
 	cp utils/*.cmi parsing/*.cmi typing/*.cmi bytecomp/*.cmi driver/*.cmi \
 	   $(COMPLIBDIR)
 # extra work for otherlibs, extending testsuite coverage
-	make ocamltools
+#	make ocamltools
 #	make ocamltoolsopt
 	make otherlibrariesopt_phc
 #	cd stdlib; $(MAKE) all
@@ -703,7 +702,7 @@ ocamlyacc:
 
 # Tools
 
-ocamltools: ocamlc asmcomp/cmx_format.cmi
+ocamltools: asmcomp/cmx_format.cmi
 	cd tools; $(MAKE) all
 
 ocamltoolsopt: ocamlopt
@@ -846,7 +845,7 @@ partialclean::
 	rm -f *~
 
 depend: beforedepend
-	(for d in utils parsing typing bytecomp asmcomp driver toplevel; \
+	(for d in utils parsing typing bytecomp asmcomp driver; \
 	 do $(CAMLDEP) $(DEPFLAGS) $$d/*.mli $$d/*.ml; \
 	 done) > .depend
 

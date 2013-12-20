@@ -41,5 +41,5 @@ CAMLDEP=$(CAMLRUN) $(TOPDIR)/tools/ocamldep
 COMPFLAGS=-g
 LINKFLAGS=
 CAMLOPTLIBR=$(CAMLOPT) -a
-MKLIB=$(CAMLRUN) $(TOPDIR)/tools/ocamlmklib
+MKLIB=ocamlmklib
 CAMLRUNGEN=../../boot/ocamlrun

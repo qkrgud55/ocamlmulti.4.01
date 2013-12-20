@@ -17,7 +17,7 @@ CC=$(BYTECC)
 CFLAGS=-I../../byterun -O $(BYTECCCOMPOPTS) $(SHAREDCCCOMPOPTS) -g
 CAMLC=ocamlc -I ../unix
 # CAMLC=../../ocamlcomp.sh -I ../unix
-MKLIB=../../boot/ocamlrun ../../tools/ocamlmklib
+MKLIB=ocamlmklib
 COMPFLAGS=-w +33..39 -warn-error A
 
 C_OBJS=scheduler.o

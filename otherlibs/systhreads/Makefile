@@ -17,7 +17,7 @@ CAMLC=ocamlc -I ../unix
 # CAMLC=../../ocamlcomp.sh -I ../unix
 CAMLOPT=../../ocamlopt -I ../unix
 # CAMLOPT=../../ocamlcompopt.sh -I ../unix
-MKLIB=ocamlrun ../../tools/ocamlmklib
+MKLIB=ocamlmklib
 # MKLIB=../../boot/ocamlrun ../../tools/ocamlmklib
 COMPFLAGS=-w +33..39 -warn-error A -g -I ../../stdlib
 

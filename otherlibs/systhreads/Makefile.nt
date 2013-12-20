@@ -17,7 +17,7 @@ include ../../config/Makefile
 CAMLC=../../boot/ocamlrun ../../ocamlc -I ../../stdlib -I ../win32unix
 CAMLOPT=../../boot/ocamlrun ../../ocamlopt -I ../../stdlib -I ../win32unix
 COMPFLAGS=-w +33 -warn-error A -g
-MKLIB=../../boot/ocamlrun ../../tools/ocamlmklib
+MKLIB=ocamlmklib
 CFLAGS=-I../../byterun $(EXTRACFLAGS)
 
 CAMLOBJS=thread.cmo mutex.cmo condition.cmo event.cmo threadUnix.cmo
