@@ -27,7 +27,7 @@
 #define Setup_for_gc
 #define Restore_after_gc
 
-CAMLexport value caml_alloc (mlsize_t wosize, tag_t tag)
+CAMLexport value caml_alloc (pctx ctx, mlsize_t wosize, tag_t tag)
 {
   value result;
   mlsize_t i;
@@ -49,7 +49,7 @@ CAMLexport value caml_alloc (mlsize_t wosize, tag_t tag)
   return result;
 }
 
-CAMLexport value caml_alloc_small (mlsize_t wosize, tag_t tag)
+CAMLexport value caml_alloc_small (pctx ctx, mlsize_t wosize, tag_t tag)
 {
   value result;
 
@@ -60,12 +60,12 @@ CAMLexport value caml_alloc_small (mlsize_t wosize, tag_t tag)
   return result;
 }
 
-CAMLexport value caml_alloc_tuple(mlsize_t n)
+CAMLexport value caml_alloc_tuple(pctx ctx, mlsize_t n)
 {
   return caml_alloc(n, 0);
 }
 
-CAMLexport value caml_alloc_string (mlsize_t len)
+CAMLexport value caml_alloc_string (pctx ctx, mlsize_t len)
 {
   value result;
   mlsize_t offset_index;
@@ -83,14 +83,14 @@ CAMLexport value caml_alloc_string (mlsize_t len)
   return result;
 }
 
-CAMLexport value caml_alloc_final (mlsize_t len, final_fun fun,
+CAMLexport value caml_alloc_final (pctx ctx, mlsize_t len, final_fun fun,
                                    mlsize_t mem, mlsize_t max)
 {
   return caml_alloc_custom(caml_final_custom_operations(fun),
                            len * sizeof(value), mem, max);
 }
 
-CAMLexport value caml_copy_string(char const *s)
+CAMLexport value caml_copy_string(pctx ctx, char const *s)
 {
   int len;
   value res;
@@ -125,7 +125,7 @@ CAMLexport value caml_alloc_array(value (*funct)(char const *),
   }
 }
 
-CAMLexport value caml_copy_string_array(char const ** arr)
+CAMLexport value caml_copy_string_array(pctx ctx, char const ** arr)
 {
   return caml_alloc_array(caml_copy_string, arr);
 }
@@ -143,7 +143,7 @@ CAMLexport int caml_convert_flag_list(value list, int *flags)
 
 /* For compiling let rec over values */
 
-CAMLprim value caml_alloc_dummy(value size)
+CAMLprim value caml_alloc_dummy(pctx ctx, value size)
 {
   mlsize_t wosize = Int_val(size);
 
@@ -151,7 +151,7 @@ CAMLprim value caml_alloc_dummy(value size)
   return caml_alloc (wosize, 0);
 }
 
-CAMLprim value caml_alloc_dummy_float (value size)
+CAMLprim value caml_alloc_dummy_float (pctx ctx, value size)
 {
   mlsize_t wosize = Int_val(size) * Double_wosize;
 
@@ -159,7 +159,7 @@ CAMLprim value caml_alloc_dummy_float (value size)
   return caml_alloc (wosize, 0);
 }
 
-CAMLprim value caml_update_dummy(value dummy, value newval)
+CAMLprim value caml_update_dummy(pctx ctx, value dummy, value newval)
 {
   mlsize_t size, i;
   tag_t tag;

@@ -117,7 +117,7 @@ static void fl_check (void)
    it is located in the high-address words of the free block.  This way,
    the linking of the free-list does not change in case 2.
 */
-static char *allocate_block (mlsize_t wh_sz, int flpi, char *prev, char *cur)
+static char *allocate_block (pctx ctx, mlsize_t wh_sz, int flpi, char *prev, char *cur)
 {
   header_t h = Hd_bp (cur);
                                              Assert (Whsize_hd (h) >= wh_sz);
@@ -153,7 +153,7 @@ static char *allocate_block (mlsize_t wh_sz, int flpi, char *prev, char *cur)
    The calling function must do it before any GC function gets called.
    [caml_fl_allocate] returns a head pointer.
 */
-char *caml_fl_allocate (mlsize_t wo_sz)
+char *caml_fl_allocate (pctx ctx, mlsize_t wo_sz)
 {
   char *cur = NULL, *prev, *result;
   int i;
@@ -339,7 +339,7 @@ char *caml_fl_allocate (mlsize_t wo_sz)
 
 static char *last_fragment;
 
-void caml_fl_init_merge (void)
+void caml_fl_init_merge (pctx ctx)
 {
   last_fragment = NULL;
   caml_fl_merge = Fl_head;
@@ -348,7 +348,7 @@ void caml_fl_init_merge (void)
 #endif
 }
 
-static void truncate_flp (char *changed)
+static void truncate_flp (pctx ctx, char *changed)
 {
   if (changed == Fl_head){
     flp_size = 0;
@@ -360,7 +360,7 @@ static void truncate_flp (char *changed)
 }
 
 /* This is called by caml_compact_heap. */
-void caml_fl_reset (void)
+void caml_fl_reset (pctx ctx)
 {
   Next (Fl_head) = NULL;
   switch (policy){
@@ -380,7 +380,7 @@ void caml_fl_reset (void)
 
 /* [caml_fl_merge_block] returns the head pointer of the next block after [bp],
    because merging blocks may change the size of [bp]. */
-char *caml_fl_merge_block (char *bp)
+char *caml_fl_merge_block (pctx ctx, char *bp)
 {
   char *prev, *cur, *adj;
   header_t hd = Hd_bp (bp);
@@ -467,7 +467,7 @@ char *caml_fl_merge_block (char *bp)
    terminated by NULL, and field 1 of the first block must point to
    the last block.
 */
-void caml_fl_add_blocks (char *bp)
+void caml_fl_add_blocks (pctx ctx, char *bp)
 {
                                                    Assert (fl_last != NULL);
                                             Assert (Next (fl_last) == NULL);
@@ -514,7 +514,7 @@ void caml_fl_add_blocks (char *bp)
           is overridden by the merge code, but we have historically used
           [Caml_white].
 */
-void caml_make_free_blocks (value *p, mlsize_t size, int do_merge, int color)
+void caml_make_free_blocks (pctx ctx, value *p, mlsize_t size, int do_merge, int color)
 {
   mlsize_t sz;
 
@@ -531,7 +531,7 @@ void caml_make_free_blocks (value *p, mlsize_t size, int do_merge, int color)
   }
 }
 
-void caml_set_allocation_policy (uintnat p)
+void caml_set_allocation_policy (pctx ctx, uintnat p)
 {
   switch (p){
   case Policy_next_fit:

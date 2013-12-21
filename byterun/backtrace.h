@@ -22,10 +22,10 @@ CAMLextern code_t * caml_backtrace_buffer;
 CAMLextern value caml_backtrace_last_exn;
 CAMLextern char * caml_cds_file;
 
-CAMLprim value caml_record_backtrace(value vflag);
+CAMLprim value caml_record_backtrace(pctx ctx, value vflag);
 #ifndef NATIVE_CODE
-extern void caml_stash_backtrace(value exn, code_t pc, value * sp);
+extern void caml_stash_backtrace(pctx ctx, value exn, code_t pc, value * sp);
 #endif
-CAMLextern void caml_print_exception_backtrace(void);
+CAMLextern void caml_print_exception_backtrace(pctx ctx);
 
 #endif /* CAML_BACKTRACE_H */

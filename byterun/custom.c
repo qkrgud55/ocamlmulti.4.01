@@ -19,7 +19,7 @@
 #include "memory.h"
 #include "mlvalues.h"
 
-CAMLexport value caml_alloc_custom(struct custom_operations * ops,
+CAMLexport value caml_alloc_custom(pctx ctx, struct custom_operations * ops,
                                    uintnat size,
                                    mlsize_t mem,
                                    mlsize_t max)
@@ -50,7 +50,7 @@ struct custom_operations_list {
 
 static struct custom_operations_list * custom_ops_table = NULL;
 
-CAMLexport void caml_register_custom_operations(struct custom_operations * ops)
+CAMLexport void caml_register_custom_operations(pctx ctx, struct custom_operations * ops)
 {
   struct custom_operations_list * l =
     caml_stat_alloc(sizeof(struct custom_operations_list));
@@ -61,7 +61,7 @@ CAMLexport void caml_register_custom_operations(struct custom_operations * ops)
   custom_ops_table = l;
 }
 
-struct custom_operations * caml_find_custom_operations(char * ident)
+struct custom_operations * caml_find_custom_operations(pctx ctx, char * ident)
 {
   struct custom_operations_list * l;
   for (l = custom_ops_table; l != NULL; l = l->next)
@@ -71,7 +71,7 @@ struct custom_operations * caml_find_custom_operations(char * ident)
 
 static struct custom_operations_list * custom_ops_final_table = NULL;
 
-struct custom_operations * caml_final_custom_operations(final_fun fn)
+struct custom_operations * caml_final_custom_operations(pctx ctx, final_fun fn)
 {
   struct custom_operations_list * l;
   struct custom_operations * ops;
@@ -96,7 +96,7 @@ extern struct custom_operations caml_int32_ops,
                                 caml_nativeint_ops,
                                 caml_int64_ops;
 
-void caml_init_custom_operations(void)
+void caml_init_custom_operations(pctx ctx)
 {
   caml_register_custom_operations(&caml_int32_ops);
   caml_register_custom_operations(&caml_nativeint_ops);

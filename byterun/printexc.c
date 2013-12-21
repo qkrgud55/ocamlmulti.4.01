@@ -92,7 +92,7 @@ CAMLexport char * caml_format_exception(value exn)
 }
 
 
-void caml_fatal_uncaught_exception(value exn)
+void caml_fatal_uncaught_exception(pctx ctx, value exn)
 {
   char * msg;
   value * at_exit;

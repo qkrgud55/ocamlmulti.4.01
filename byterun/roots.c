@@ -31,7 +31,7 @@ CAMLexport void (*caml_scan_roots_hook) (scanning_action f) = NULL;
    asmrun/roots.c */
 /* Call [caml_oldify_one] on (at least) all the roots that point to the minor
    heap. */
-void caml_oldify_local_roots (void)
+void caml_oldify_local_roots (pctx ctx)
 {
   register value * sp;
   struct caml__roots_block *lr;
@@ -60,12 +60,12 @@ void caml_oldify_local_roots (void)
 
 /* Call [caml_darken] on all roots */
 
-void caml_darken_all_roots (void)
+void caml_darken_all_roots (pctx ctx)
 {
   caml_do_roots (caml_darken);
 }
 
-void caml_do_roots (scanning_action f)
+void caml_do_roots (pctx ctx, scanning_action f)
 {
   /* Global variables */
   f(caml_global_data, &caml_global_data);
@@ -79,7 +79,7 @@ void caml_do_roots (scanning_action f)
   if (caml_scan_roots_hook != NULL) (*caml_scan_roots_hook)(f);
 }
 
-CAMLexport void caml_do_local_roots (scanning_action f, value *stack_low,
+CAMLexport void caml_do_local_roots (pctx ctx, scanning_action f, value *stack_low,
                                      value *stack_high,
                                      struct caml__roots_block *local_roots)
 {

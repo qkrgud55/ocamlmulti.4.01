@@ -82,11 +82,11 @@ extern int caml_frame_descriptors_mask;
 #define Hash_retaddr(addr) \
   (((uintnat)(addr) >> 3) & caml_frame_descriptors_mask)
 
-extern void caml_init_frame_descriptors(void);
-extern void caml_register_frametable(intnat *);
-extern void caml_register_dyn_global(void *);
+extern void caml_init_frame_descriptors(pctx ctx);
+extern void caml_register_frametable(pctx ctx, intnat *);
+extern void caml_register_dyn_global(pctx ctx);
 
-extern uintnat caml_stack_usage (void);
+extern uintnat caml_stack_usage (pctx ctx);
 extern uintnat (*caml_stack_usage_hook)(void);
 
 /* Declaration of variables used in the asm code */

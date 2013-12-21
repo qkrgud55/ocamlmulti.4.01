@@ -46,7 +46,7 @@
 
 static uint32 random_seed = 0;
 
-static int random_level(void)
+static int random_level(pctx ctx)
 {
   uint32 r;
   int level = 0;
@@ -64,7 +64,7 @@ static int random_level(void)
 
 /* Insertion in a global root list */
 
-static void caml_insert_global_root(struct global_root_list * rootlist,
+static void caml_insert_global_root(pctx ctx, struct global_root_list * rootlist,
                                     value * r)
 {
   struct global_root * update[NUM_LEVELS];
@@ -103,7 +103,7 @@ static void caml_insert_global_root(struct global_root_list * rootlist,
 
 /* Deletion in a global root list */
 
-static void caml_delete_global_root(struct global_root_list * rootlist,
+static void caml_delete_global_root(pctx ctx, struct global_root_list * rootlist,
                                     value * r)
 {
   struct global_root * update[NUM_LEVELS];
@@ -139,7 +139,7 @@ static void caml_delete_global_root(struct global_root_list * rootlist,
 
 /* Iterate over a global root list */
 
-static void caml_iterate_global_roots(scanning_action f,
+static void caml_iterate_global_roots(pctx ctx, scanning_action f,
                                       struct global_root_list * rootlist)
 {
   struct global_root * gr;
@@ -176,7 +176,7 @@ struct global_root_list caml_global_roots_old = { NULL, { NULL, }, 0 };
 
 /* Register a global C root of the mutable kind */
 
-CAMLexport void caml_register_global_root(value *r)
+CAMLexport void caml_register_global_root(pctx ctx, value *r)
 {
   Assert (((intnat) r & 3) == 0);  /* compact.c demands this (for now) */
   caml_insert_global_root(&caml_global_roots, r);
@@ -184,14 +184,14 @@ CAMLexport void caml_register_global_root(value *r)
 
 /* Un-register a global C root of the mutable kind */
 
-CAMLexport void caml_remove_global_root(value *r)
+CAMLexport void caml_remove_global_root(pctx ctx, value *r)
 {
   caml_delete_global_root(&caml_global_roots, r);
 }
 
 /* Register a global C root of the generational kind */
 
-CAMLexport void caml_register_generational_global_root(value *r)
+CAMLexport void caml_register_generational_global_root(pctx ctx, value *r)
 {
   value v = *r;
   Assert (((intnat) r & 3) == 0);  /* compact.c demands this (for now) */
@@ -205,7 +205,7 @@ CAMLexport void caml_register_generational_global_root(value *r)
 
 /* Un-register a global C root of the generational kind */
 
-CAMLexport void caml_remove_generational_global_root(value *r)
+CAMLexport void caml_remove_generational_global_root(pctx ctx, value *r)
 {
   value v = *r;
   if (Is_block(v)) {
@@ -218,7 +218,7 @@ CAMLexport void caml_remove_generational_global_root(value *r)
 
 /* Modify the value of a global C root of the generational kind */
 
-CAMLexport void caml_modify_generational_global_root(value *r, value newval)
+CAMLexport void caml_modify_generational_global_root(pctx ctx, value *r, value newval)
 {
   value oldval = *r;
 
@@ -258,7 +258,7 @@ CAMLexport void caml_modify_generational_global_root(value *r, value newval)
 
 /* Scan all global roots */
 
-void caml_scan_global_roots(scanning_action f)
+void caml_scan_global_roots(pctx ctx, scanning_action f)
 {
   caml_iterate_global_roots(f, &caml_global_roots);
   caml_iterate_global_roots(f, &caml_global_roots_young);
@@ -267,7 +267,7 @@ void caml_scan_global_roots(scanning_action f)
 
 /* Scan global roots for a minor collection */
 
-void caml_scan_global_young_roots(scanning_action f)
+void caml_scan_global_young_roots(pctx ctx, scanning_action f)
 {
   struct global_root * gr;
 

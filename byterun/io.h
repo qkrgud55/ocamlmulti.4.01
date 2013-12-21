@@ -74,22 +74,22 @@ enum {
    ? caml_refill(channel)                                                   \
    : (unsigned char) *((channel)->curr)++)
 
-CAMLextern struct channel * caml_open_descriptor_in (int);
-CAMLextern struct channel * caml_open_descriptor_out (int);
-CAMLextern void caml_close_channel (struct channel *);
+CAMLextern struct channel * caml_open_descriptor_in (pctx ctx, int);
+CAMLextern struct channel * caml_open_descriptor_out (pctx ctx, int);
+CAMLextern void caml_close_channel (pctx ctx, struct channel *);
 CAMLextern int caml_channel_binary_mode (struct channel *);
-CAMLextern value caml_alloc_channel(struct channel *chan);
+CAMLextern value caml_alloc_channel(pctx ctx, struct channel *chan);
 
-CAMLextern int caml_flush_partial (struct channel *);
-CAMLextern void caml_flush (struct channel *);
-CAMLextern void caml_putword (struct channel *, uint32);
-CAMLextern int caml_putblock (struct channel *, char *, intnat);
-CAMLextern void caml_really_putblock (struct channel *, char *, intnat);
+CAMLextern int caml_flush_partial (pctx ctx, struct channel *);
+CAMLextern void caml_flush (pctx ctx, struct channel *);
+CAMLextern void caml_putword (pctx ctx, struct channel *, uint32);
+CAMLextern int caml_putblock (pctx ctx, struct channel *, char *, intnat);
+CAMLextern void caml_really_putblock (pctx ctx, struct channel *, char *, intnat);
 
-CAMLextern unsigned char caml_refill (struct channel *);
-CAMLextern uint32 caml_getword (struct channel *);
-CAMLextern int caml_getblock (struct channel *, char *, intnat);
-CAMLextern int caml_really_getblock (struct channel *, char *, intnat);
+CAMLextern unsigned char caml_refill (pctx ctx, struct channel *);
+CAMLextern uint32 caml_getword (pctx ctx, struct channel *);
+CAMLextern int caml_getblock (pctx ctx, struct channel *, char *, intnat);
+CAMLextern int caml_really_getblock (pctx ctx, struct channel *, char *, intnat);
 
 /* Extract a struct channel * from the heap object representing it */
 
@@ -117,8 +117,8 @@ CAMLextern struct channel * caml_all_opened_channels;
 #define Val_file_offset(fofs) caml_copy_int64(fofs)
 #define File_offset_val(v) ((file_offset) Int64_val(v))
 #else
-CAMLextern value caml_Val_file_offset(file_offset fofs);
-CAMLextern file_offset caml_File_offset_val(value v);
+CAMLextern value caml_Val_file_offset(pctx ctx, file_offset fofs);
+CAMLextern file_offset caml_File_offset_val(pctx ctx, value v);
 #define Val_file_offset caml_Val_file_offset
 #define File_offset_val caml_File_offset_val
 #endif

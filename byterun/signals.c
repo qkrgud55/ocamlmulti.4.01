@@ -60,7 +60,7 @@ void caml_process_pending_signals(void)
        in caml_garbage_collection
 */
 
-void caml_record_signal(int signal_number)
+void caml_record_signal(pctx ctx, int signal_number)
 {
   caml_pending_signals[signal_number] = 1;
   caml_signals_are_pending = 1;
@@ -128,7 +128,7 @@ CAMLexport void caml_leave_blocking_section(void)
 
 static value caml_signal_handlers = 0;
 
-void caml_execute_signal(int signal_number, int in_signal_handler)
+void caml_execute_signal(pctx ctx, int signal_number, int in_signal_handler)
 {
   value res;
 #ifdef POSIX_SIGNALS
@@ -159,7 +159,7 @@ void caml_execute_signal(int signal_number, int in_signal_handler)
 
 int volatile caml_force_major_slice = 0;
 
-void caml_urge_major_slice (void)
+void caml_urge_major_slice (pctx ctx)
 {
   caml_force_major_slice = 1;
 #ifndef NATIVE_CODE
@@ -263,7 +263,7 @@ CAMLexport int caml_rev_convert_signal_number(int signo)
 
 /* Installation of a signal handler (as per [Sys.signal]) */
 
-CAMLprim value caml_install_signal_handler(value signal_number, value action)
+CAMLprim value caml_install_signal_handler(pctx ctx, value signal_number, value action)
 {
   CAMLparam2 (signal_number, action);
   CAMLlocal1 (res);

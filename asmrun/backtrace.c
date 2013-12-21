@@ -32,7 +32,7 @@ value caml_backtrace_last_exn = Val_unit;
 
 /* Start or stop the backtrace machinery */
 
-CAMLprim value caml_record_backtrace(value vflag)
+CAMLprim value caml_record_backtrace(pctx ctx, value vflag)
 {
   int flag = Int_val(vflag);
 
@@ -50,7 +50,7 @@ CAMLprim value caml_record_backtrace(value vflag)
 
 /* Return the status of the backtrace machinery */
 
-CAMLprim value caml_backtrace_status(value vunit)
+CAMLprim value caml_backtrace_status(pctx ctx, value vunit)
 {
   return Val_bool(caml_backtrace_active);
 }
@@ -105,7 +105,7 @@ frame_descr * caml_next_frame_descriptor(uintnat * pc, char ** sp)
    implementation -- before the more flexible
    [caml_get_current_callstack] was implemented. */
 
-void caml_stash_backtrace(value exn, uintnat pc, char * sp, char * trapsp)
+void caml_stash_backtrace(pctx ctx, value exn, uintnat pc, char * sp, char * trapsp)
 {
   if (exn != caml_backtrace_last_exn) {
     caml_backtrace_pos = 0;
@@ -205,7 +205,7 @@ struct loc_info {
   int loc_endchr;
 };
 
-static void extract_location_info(frame_descr * d,
+static void extract_location_info(pctx ctx, frame_descr * d,
                                   /*out*/ struct loc_info * li)
 {
   uintnat infoptr;
@@ -252,7 +252,7 @@ static void extract_location_info(frame_descr * d,
    useless. We kept it to keep code identical to the byterun/
    implementation. */
 
-static void print_location(struct loc_info * li, int index)
+static void print_location(pctx ctx, struct loc_info * li, int index)
 {
   char * info;
 
@@ -282,7 +282,7 @@ static void print_location(struct loc_info * li, int index)
 
 /* Print a backtrace */
 
-void caml_print_exception_backtrace(void)
+void caml_print_exception_backtrace(pctx ctx)
 {
   int i;
   struct loc_info li;
@@ -345,7 +345,7 @@ CAMLprim value caml_get_exception_raw_backtrace(value unit)
    on it as an external.
 */
 
-CAMLprim value caml_get_exception_backtrace(value unit)
+CAMLprim value caml_get_exception_backtrace(pctx ctx, value unit)
 {
   CAMLparam0();
   CAMLlocal2(raw,res);

@@ -33,22 +33,22 @@ extern "C" {
 #endif
 
 
-CAMLextern value caml_alloc_shr (mlsize_t, tag_t);
-CAMLextern void caml_adjust_gc_speed (mlsize_t, mlsize_t);
+CAMLextern value caml_alloc_shr (pctx ctx, mlsize_t, tag_t);
+CAMLextern void caml_adjust_gc_speed (pctx ctx, mlsize_t, mlsize_t);
 CAMLextern void caml_alloc_dependent_memory (mlsize_t);
 CAMLextern void caml_free_dependent_memory (mlsize_t);
-CAMLextern void caml_modify (value *, value);
-CAMLextern void caml_initialize (value *, value);
-CAMLextern value caml_check_urgent_gc (value);
-CAMLextern void * caml_stat_alloc (asize_t);              /* Size in bytes. */
+CAMLextern void caml_modify (pctx ctx, value *, value);
+CAMLextern void caml_initialize (pctx ctx, value *, value);
+CAMLextern value caml_check_urgent_gc (pctx ctx, value);
+CAMLextern void * caml_stat_alloc (pctx ctx, asize_t);              /* Size in bytes. */
 CAMLextern void caml_stat_free (void *);
 CAMLextern void * caml_stat_resize (void *, asize_t);     /* Size in bytes. */
 char *caml_alloc_for_heap (asize_t request);   /* Size in bytes. */
 void caml_free_for_heap (char *mem);
-int caml_add_to_heap (char *mem);
-color_t caml_allocation_color (void *hp);
+int caml_add_to_heap (pctx ctx, char *mem);
+color_t caml_allocation_color (pctx ctx);
 
-/* void caml_shrink_heap (char *);        Only used in compact.c */
+/* void caml_shrink_heap (pctx ctx, char *);        Only used in compact.c */
 
 /* <private> */
 
@@ -400,12 +400,12 @@ CAMLextern struct caml__roots_block *caml_local_roots;  /* defined in roots.c */
    for the duration of the program, or until [caml_remove_global_root] is
    called. */
 
-CAMLextern void caml_register_global_root (value *);
+CAMLextern void caml_register_global_root (pctx ctx, value *);
 
 /* [caml_remove_global_root] removes a memory root registered on a global C
    variable with [caml_register_global_root]. */
 
-CAMLextern void caml_remove_global_root (value *);
+CAMLextern void caml_remove_global_root (pctx ctx, value *);
 
 /* [caml_register_generational_global_root] registers a global C
    variable as a memory root for the duration of the program, or until
@@ -419,13 +419,13 @@ CAMLextern void caml_remove_global_root (value *);
    In return for these constraints, scanning of memory roots during
    minor collection is made more efficient. */
 
-CAMLextern void caml_register_generational_global_root (value *);
+CAMLextern void caml_register_generational_global_root (pctx ctx, value *);
 
 /* [caml_remove_generational_global_root] removes a memory root
    registered on a global C variable with
    [caml_register_generational_global_root]. */
 
-CAMLextern void caml_remove_generational_global_root (value *);
+CAMLextern void caml_remove_generational_global_root (pctx ctx, value *);
 
 /* [caml_modify_generational_global_root(r, newval)]
    modifies the value contained in [r], storing [newval] inside.
@@ -434,7 +434,7 @@ CAMLextern void caml_remove_generational_global_root (value *);
    generational global roots.  [r] must be a global memory root
    previously registered with [caml_register_generational_global_root]. */
 
-CAMLextern void caml_modify_generational_global_root(value *r, value newval);
+CAMLextern void caml_modify_generational_global_root(pctx ctx, value *r, value newval);
 
 #ifdef __cplusplus
 }

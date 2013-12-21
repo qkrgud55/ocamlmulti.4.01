@@ -25,21 +25,21 @@
 extern "C" {
 #endif
 
-CAMLextern value caml_alloc (mlsize_t, tag_t);
-CAMLextern value caml_alloc_small (mlsize_t, tag_t);
-CAMLextern value caml_alloc_tuple (mlsize_t);
-CAMLextern value caml_alloc_string (mlsize_t);  /* size in bytes */
-CAMLextern value caml_copy_string (char const *);
-CAMLextern value caml_copy_string_array (char const **);
-CAMLextern value caml_copy_double (double);
-CAMLextern value caml_copy_int32 (int32);       /* defined in [ints.c] */
-CAMLextern value caml_copy_int64 (int64);       /* defined in [ints.c] */
-CAMLextern value caml_copy_nativeint (intnat);  /* defined in [ints.c] */
-CAMLextern value caml_alloc_array (value (*funct) (char const *),
+CAMLextern value caml_alloc (pctx ctx, mlsize_t, tag_t);
+CAMLextern value caml_alloc_small (pctx ctx, mlsize_t, tag_t);
+CAMLextern value caml_alloc_tuple (pctx ctx, mlsize_t);
+CAMLextern value caml_alloc_string (pctx ctx, mlsize_t);  /* size in bytes */
+CAMLextern value caml_copy_string (pctx ctx, char const *);
+CAMLextern value caml_copy_string_array (pctx ctx, char const **);
+CAMLextern value caml_copy_double (pctx ctx, double);
+CAMLextern value caml_copy_int32 (pctx ctx, int32);       /* defined in [ints.c] */
+CAMLextern value caml_copy_int64 (pctx ctx, int64);       /* defined in [ints.c] */
+CAMLextern value caml_copy_nativeint (pctx ctx, intnat);  /* defined in [ints.c] */
+CAMLextern value caml_alloc_array (pctx ctx, value (*funct) (char const *),
                                    char const ** array);
 
 typedef void (*final_fun)(value);
-CAMLextern value caml_alloc_final (mlsize_t, /*size in words*/
+CAMLextern value caml_alloc_final (pctx ctx, mlsize_t, /*size in words*/
                                    final_fun, /*finalization function*/
                                    mlsize_t, /*resources consumed*/
                                    mlsize_t  /*max resources*/);

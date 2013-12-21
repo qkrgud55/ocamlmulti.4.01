@@ -19,14 +19,14 @@
 
 typedef void (*scanning_action) (value, value *);
 
-void caml_oldify_local_roots (void);
-void caml_darken_all_roots (void);
-void caml_do_roots (scanning_action);
+void caml_oldify_local_roots (pctx ctx);
+void caml_darken_all_roots (pctx ctx);
+void caml_do_roots (pctx ctx, scanning_action);
 #ifndef NATIVE_CODE
-CAMLextern void caml_do_local_roots (scanning_action, value *, value *,
+CAMLextern void caml_do_local_roots (pctx ctx, scanning_action, value *, value *,
                                      struct caml__roots_block *);
 #else
-CAMLextern void caml_do_local_roots(scanning_action f, char * bottom_of_stack,
+CAMLextern void caml_do_local_roots(pctx ctx, scanning_action f, char * bottom_of_stack,
                                     uintnat last_retaddr, value * gc_regs,
                                     struct caml__roots_block * local_roots);
 #endif

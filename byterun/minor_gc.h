@@ -41,14 +41,14 @@ CAMLextern struct caml_ref_table caml_ref_table, caml_weak_ref_table;
   (Assert (Is_block (val)), \
    (addr)(val) < (addr)caml_young_end && (addr)(val) > (addr)caml_young_start)
 
-extern void caml_set_minor_heap_size (asize_t); /* size in bytes */
-extern void caml_empty_minor_heap (void);
-CAMLextern void caml_minor_collection (void);
+extern void caml_set_minor_heap_size (pctx ctx, asize_t); /* size in bytes */
+extern void caml_empty_minor_heap (pctx ctx);
+CAMLextern void caml_minor_collection (pctx ctx);
 CAMLextern void garbage_collection (void); /* def in asmrun/signals.c */
-extern void caml_realloc_ref_table (struct caml_ref_table *);
+extern void caml_realloc_ref_table (pctx ctx, struct caml_ref_table *);
 extern void caml_alloc_table (struct caml_ref_table *, asize_t, asize_t);
-extern void caml_oldify_one (value, value *);
-extern void caml_oldify_mopup (void);
+extern void caml_oldify_one (pctx ctx, value, value *);
+extern void caml_oldify_mopup (pctx ctx);
 
 #define Oldify(p) do{ \
     value __oldify__v__ = *p; \

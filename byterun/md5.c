@@ -22,7 +22,7 @@
 
 /* MD5 message digest */
 
-CAMLprim value caml_md5_string(value str, value ofs, value len)
+CAMLprim value caml_md5_string(pctx ctx, value str, value ofs, value len)
 {
   struct MD5Context ctx;
   value res;
@@ -33,7 +33,7 @@ CAMLprim value caml_md5_string(value str, value ofs, value len)
   return res;
 }
 
-CAMLprim value caml_md5_chan(value vchan, value len)
+CAMLprim value caml_md5_chan(pctx ctx, value vchan, value len)
 {
   CAMLparam2 (vchan, len);
   struct channel * chan = Channel(vchan);

@@ -61,7 +61,7 @@ static char * error_message(void)
 #define EWOULDBLOCK (-1)
 #endif
 
-CAMLexport void caml_sys_error(value arg)
+CAMLexport void caml_sys_error(pctx ctx, value arg)
 {
   CAMLparam1 (arg);
   char * err;
@@ -82,7 +82,7 @@ CAMLexport void caml_sys_error(value arg)
   CAMLnoreturn;
 }
 
-CAMLexport void caml_sys_io_error(value arg)
+CAMLexport void caml_sys_io_error(pctx ctx, value arg)
 {
   if (errno == EAGAIN || errno == EWOULDBLOCK) {
     caml_raise_sys_blocked_io();
@@ -119,7 +119,7 @@ static int sys_open_flags[] = {
   O_BINARY, O_TEXT, O_NONBLOCK
 };
 
-CAMLprim value caml_sys_open(value path, value vflags, value vperm)
+CAMLprim value caml_sys_open(pctx ctx, value path, value vflags, value vperm)
 {
   CAMLparam3(path, vflags, vperm);
   int fd, flags, perm;
@@ -155,7 +155,7 @@ CAMLprim value caml_sys_file_exists(value name)
   return Val_bool(stat(String_val(name), &st) == 0);
 }
 
-CAMLprim value caml_sys_is_directory(value name)
+CAMLprim value caml_sys_is_directory(pctx ctx, value name)
 {
   struct stat st;
   if (stat(String_val(name), &st) == -1) caml_sys_error(name);
@@ -166,7 +166,7 @@ CAMLprim value caml_sys_is_directory(value name)
 #endif
 }
 
-CAMLprim value caml_sys_remove(value name)
+CAMLprim value caml_sys_remove(pctx ctx, value name)
 {
   int ret;
   ret = unlink(String_val(name));
@@ -174,20 +174,20 @@ CAMLprim value caml_sys_remove(value name)
   return Val_unit;
 }
 
-CAMLprim value caml_sys_rename(value oldname, value newname)
+CAMLprim value caml_sys_rename(pctx ctx, value oldname, value newname)
 {
   if (rename(String_val(oldname), String_val(newname)) != 0)
     caml_sys_error(NO_ARG);
   return Val_unit;
 }
 
-CAMLprim value caml_sys_chdir(value dirname)
+CAMLprim value caml_sys_chdir(pctx ctx, value dirname)
 {
   if (chdir(String_val(dirname)) != 0) caml_sys_error(dirname);
   return Val_unit;
 }
 
-CAMLprim value caml_sys_getcwd(value unit)
+CAMLprim value caml_sys_getcwd(pctx ctx, value unit)
 {
   char buff[4096];
 #ifdef HAS_GETCWD
@@ -198,7 +198,7 @@ CAMLprim value caml_sys_getcwd(value unit)
   return caml_copy_string(buff);
 }
 
-CAMLprim value caml_sys_getenv(value var)
+CAMLprim value caml_sys_getenv(pctx ctx, value var)
 {
   char * res;
 
@@ -210,7 +210,7 @@ CAMLprim value caml_sys_getenv(value var)
 char * caml_exe_name;
 static char ** caml_main_argv;
 
-CAMLprim value caml_sys_get_argv(value unit)
+CAMLprim value caml_sys_get_argv(pctx ctx, value unit)
 {
   CAMLparam0 ();   /* unit is unused */
   CAMLlocal3 (exe_name, argv, res);
@@ -239,7 +239,7 @@ void caml_sys_init(char * exe_name, char **argv)
 #endif
 #endif
 
-CAMLprim value caml_sys_system_command(value command)
+CAMLprim value caml_sys_system_command(pctx ctx, value command)
 {
   CAMLparam1 (command);
   int status, retcode;
@@ -261,7 +261,7 @@ CAMLprim value caml_sys_system_command(value command)
   CAMLreturn (Val_int(retcode));
 }
 
-CAMLprim value caml_sys_time(value unit)
+CAMLprim value caml_sys_time(pctx ctx, value unit)
 {
 #ifdef HAS_GETRUSAGE
   struct rusage ru;
@@ -292,7 +292,7 @@ CAMLprim value caml_sys_time(value unit)
 extern int caml_win32_random_seed (intnat data[16]);
 #endif
 
-CAMLprim value caml_sys_random_seed (value unit)
+CAMLprim value caml_sys_random_seed (pctx ctx, value unit)
 {
   intnat data[16];
   int n, i;
@@ -363,7 +363,7 @@ CAMLprim value caml_sys_const_ostype_cygwin(value unit)
   return Val_long(0 == strcmp(OCAML_OS_TYPE,"Cygwin"));
 }
 
-CAMLprim value caml_sys_get_config(value unit)
+CAMLprim value caml_sys_get_config(pctx ctx, value unit)
 {
   CAMLparam0 ();   /* unit is unused */
   CAMLlocal2 (result, ostype);
@@ -380,7 +380,7 @@ CAMLprim value caml_sys_get_config(value unit)
   CAMLreturn (result);
 }
 
-CAMLprim value caml_sys_read_directory(value path)
+CAMLprim value caml_sys_read_directory(pctx ctx, value path)
 {
   CAMLparam1(path);
   CAMLlocal1(result);

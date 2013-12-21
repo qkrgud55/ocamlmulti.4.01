@@ -48,11 +48,11 @@ extern caml_generated_constant
 
 /* Exception raising */
 
-extern void caml_raise_exception (value bucket) Noreturn;
+extern void caml_raise_exception (pctx ctx, value bucket) Noreturn;
 
 char * caml_exception_pointer = NULL;
 
-void caml_raise(value v)
+void caml_raise(pctx ctx, value v)
 {
   Unlock_exn();
   if (caml_exception_pointer == NULL) caml_fatal_uncaught_exception(v);
@@ -71,7 +71,7 @@ void caml_raise(value v)
   caml_raise_exception(v);
 }
 
-void caml_raise_constant(value tag)
+void caml_raise_constant(pctx ctx, value tag)
 {
   CAMLparam1 (tag);
   CAMLlocal1 (bucket);
@@ -82,7 +82,7 @@ void caml_raise_constant(value tag)
   CAMLnoreturn;
 }
 
-void caml_raise_with_arg(value tag, value arg)
+void caml_raise_with_arg(pctx ctx, value tag, value arg)
 {
   CAMLparam2 (tag, arg);
   CAMLlocal1 (bucket);
@@ -94,7 +94,7 @@ void caml_raise_with_arg(value tag, value arg)
   CAMLnoreturn;
 }
 
-void caml_raise_with_args(value tag, int nargs, value args[])
+void caml_raise_with_args(pctx ctx, value tag, int nargs, value args[])
 {
   CAMLparam1 (tag);
   CAMLxparamN (args, nargs);
@@ -109,17 +109,17 @@ void caml_raise_with_args(value tag, int nargs, value args[])
   CAMLnoreturn;
 }
 
-void caml_raise_with_string(value tag, char const *msg)
+void caml_raise_with_string(pctx ctx, value tag, char const *msg)
 {
   caml_raise_with_arg(tag, caml_copy_string(msg));
 }
 
-void caml_failwith (char const *msg)
+void caml_failwith (pctx ctx, char const *msg)
 {
   caml_raise_with_string((value) caml_exn_Failure, msg);
 }
 
-void caml_invalid_argument (char const *msg)
+void caml_invalid_argument (pctx ctx, char const *msg)
 {
   caml_raise_with_string((value) caml_exn_Invalid_argument, msg);
 }
@@ -132,37 +132,37 @@ void caml_invalid_argument (char const *msg)
    statically allocated out of the heap.
    The same applies to Stack_overflow. */
 
-void caml_raise_out_of_memory(void)
+void caml_raise_out_of_memory(pctx ctx)
 {
   caml_raise((value) &caml_bucket_Out_of_memory);
 }
 
-void caml_raise_stack_overflow(void)
+void caml_raise_stack_overflow(pctx ctx)
 {
   caml_raise((value) &caml_bucket_Stack_overflow);
 }
 
-void caml_raise_sys_error(value msg)
+void caml_raise_sys_error(pctx ctx, value msg)
 {
   caml_raise_with_arg((value) caml_exn_Sys_error, msg);
 }
 
-void caml_raise_end_of_file(void)
+void caml_raise_end_of_file(pctx ctx)
 {
   caml_raise_constant((value) caml_exn_End_of_file);
 }
 
-void caml_raise_zero_divide(void)
+void caml_raise_zero_divide(pctx ctx)
 {
   caml_raise_constant((value) caml_exn_Division_by_zero);
 }
 
-void caml_raise_not_found(void)
+void caml_raise_not_found(pctx ctx)
 {
   caml_raise_constant((value) caml_exn_Not_found);
 }
 
-void caml_raise_sys_blocked_io(void)
+void caml_raise_sys_blocked_io(pctx ctx)
 {
   caml_raise_constant((value) caml_exn_Sys_blocked_io);
 }
@@ -187,7 +187,7 @@ static struct {
 
 static int array_bound_error_bucket_inited = 0;
 
-void caml_array_bound_error(void)
+void caml_array_bound_error(pctx ctx)
 {
   if (! array_bound_error_bucket_inited) {
     mlsize_t wosize = (BOUND_MSG_LEN + sizeof(value)) / sizeof(value);

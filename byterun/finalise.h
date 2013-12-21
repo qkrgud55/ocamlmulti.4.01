@@ -16,12 +16,12 @@
 
 #include "roots.h"
 
-void caml_final_update (void);
-void caml_final_do_calls (void);
-void caml_final_do_strong_roots (scanning_action f);
-void caml_final_do_weak_roots (scanning_action f);
-void caml_final_do_young_roots (scanning_action f);
-void caml_final_empty_young (void);
-value caml_final_register (value f, value v);
+void caml_final_update (pctx ctx);
+void caml_final_do_calls (pctx ctx);
+void caml_final_do_strong_roots (pctx ctx, scanning_action f);
+void caml_final_do_weak_roots (pctx ctx, scanning_action f);
+void caml_final_do_young_roots (pctx ctx, scanning_action f);
+void caml_final_empty_young (pctx ctx);
+value caml_final_register (pctx ctx, value f, value v);
 
 #endif /* CAML_FINALISE_H */

@@ -66,7 +66,7 @@ static void handle_signal(int signal_number)
   errno = saved_errno;
 }
 
-int caml_set_signal_action(int signo, int action)
+int caml_set_signal_action(pctx ctx, int signo, int action)
 {
   void (*act)(int signo), (*oldact)(int signo);
 #ifdef POSIX_SIGNALS

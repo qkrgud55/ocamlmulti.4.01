@@ -29,7 +29,7 @@
 CAMLexport struct longjmp_buffer * caml_external_raise = NULL;
 value caml_exn_bucket;
 
-CAMLexport void caml_raise(value v)
+CAMLexport void caml_raise(pctx ctx, value v)
 {
   Unlock_exn();
   caml_exn_bucket = v;
@@ -37,7 +37,7 @@ CAMLexport void caml_raise(value v)
   siglongjmp(caml_external_raise->buf, 1);
 }
 
-CAMLexport void caml_raise_constant(value tag)
+CAMLexport void caml_raise_constant(pctx ctx, value tag)
 {
   CAMLparam1 (tag);
   CAMLlocal1 (bucket);
@@ -48,7 +48,7 @@ CAMLexport void caml_raise_constant(value tag)
   CAMLnoreturn;
 }
 
-CAMLexport void caml_raise_with_arg(value tag, value arg)
+CAMLexport void caml_raise_with_arg(pctx ctx, value tag, value arg)
 {
   CAMLparam2 (tag, arg);
   CAMLlocal1 (bucket);
@@ -60,7 +60,7 @@ CAMLexport void caml_raise_with_arg(value tag, value arg)
   CAMLnoreturn;
 }
 
-CAMLexport void caml_raise_with_args(value tag, int nargs, value args[])
+CAMLexport void caml_raise_with_args(pctx ctx, value tag, int nargs, value args[])
 {
   CAMLparam1 (tag);
   CAMLxparamN (args, nargs);
@@ -75,7 +75,7 @@ CAMLexport void caml_raise_with_args(value tag, int nargs, value args[])
   CAMLnoreturn;
 }
 
-CAMLexport void caml_raise_with_string(value tag, char const *msg)
+CAMLexport void caml_raise_with_string(pctx ctx, value tag, char const *msg)
 {
   CAMLparam1 (tag);
   CAMLlocal1 (vmsg);
@@ -88,7 +88,7 @@ CAMLexport void caml_raise_with_string(value tag, char const *msg)
 /* PR#5115: Failure and Invalid_argument can be triggered by
    input_value while reading the initial value of [caml_global_data]. */
 
-CAMLexport void caml_failwith (char const *msg)
+CAMLexport void caml_failwith (pctx ctx, char const *msg)
 {
   if (caml_global_data == 0) {
     fprintf(stderr, "Fatal error: exception Failure(\"%s\")\n", msg);
@@ -97,7 +97,7 @@ CAMLexport void caml_failwith (char const *msg)
   caml_raise_with_string(Field(caml_global_data, FAILURE_EXN), msg);
 }
 
-CAMLexport void caml_invalid_argument (char const *msg)
+CAMLexport void caml_invalid_argument (pctx ctx, char const *msg)
 {
   if (caml_global_data == 0) {
     fprintf(stderr, "Fatal error: exception Invalid_argument(\"%s\")\n", msg);
@@ -106,7 +106,7 @@ CAMLexport void caml_invalid_argument (char const *msg)
   caml_raise_with_string(Field(caml_global_data, INVALID_EXN), msg);
 }
 
-CAMLexport void caml_array_bound_error(void)
+CAMLexport void caml_array_bound_error(pctx ctx)
 {
   caml_invalid_argument("index out of bounds");
 }
@@ -120,7 +120,7 @@ static struct {
   value exn;
 } out_of_memory_bucket = { 0, 0 };
 
-CAMLexport void caml_raise_out_of_memory(void)
+CAMLexport void caml_raise_out_of_memory(pctx ctx)
 {
   if (out_of_memory_bucket.exn == 0)
     caml_fatal_error
@@ -128,32 +128,32 @@ CAMLexport void caml_raise_out_of_memory(void)
   caml_raise((value) &(out_of_memory_bucket.exn));
 }
 
-CAMLexport void caml_raise_stack_overflow(void)
+CAMLexport void caml_raise_stack_overflow(pctx ctx)
 {
   caml_raise_constant(Field(caml_global_data, STACK_OVERFLOW_EXN));
 }
 
-CAMLexport void caml_raise_sys_error(value msg)
+CAMLexport void caml_raise_sys_error(pctx ctx, value msg)
 {
   caml_raise_with_arg(Field(caml_global_data, SYS_ERROR_EXN), msg);
 }
 
-CAMLexport void caml_raise_end_of_file(void)
+CAMLexport void caml_raise_end_of_file(pctx ctx)
 {
   caml_raise_constant(Field(caml_global_data, END_OF_FILE_EXN));
 }
 
-CAMLexport void caml_raise_zero_divide(void)
+CAMLexport void caml_raise_zero_divide(pctx ctx)
 {
   caml_raise_constant(Field(caml_global_data, ZERO_DIVIDE_EXN));
 }
 
-CAMLexport void caml_raise_not_found(void)
+CAMLexport void caml_raise_not_found(pctx ctx)
 {
   caml_raise_constant(Field(caml_global_data, NOT_FOUND_EXN));
 }
 
-CAMLexport void caml_raise_sys_blocked_io(void)
+CAMLexport void caml_raise_sys_blocked_io(pctx ctx)
 {
   caml_raise_constant(Field(caml_global_data, SYS_BLOCKED_IO));
 }

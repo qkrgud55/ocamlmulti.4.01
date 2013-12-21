@@ -57,7 +57,7 @@ static link *cons(void *data, link *tl) {
 
 static link *frametables = NULL;
 
-void caml_register_frametable(intnat *table) {
+void caml_register_frametable(pctx ctx, intnat *table) {
   frametables = cons(table,frametables);
 
   if (NULL != caml_frame_descriptors) {
@@ -67,7 +67,7 @@ void caml_register_frametable(intnat *table) {
   }
 }
 
-void caml_init_frame_descriptors(void)
+void caml_init_frame_descriptors(pctx ctx)
 {
   intnat num_descr, tblsize, i, j, len;
   intnat * tbl;
@@ -133,13 +133,13 @@ intnat caml_globals_inited = 0;
 static intnat caml_globals_scanned = 0;
 static link * caml_dyn_globals = NULL;
 
-void caml_register_dyn_global(void *v) {
+void caml_register_dyn_global(pctx ctx) {
   caml_dyn_globals = cons((void*) v,caml_dyn_globals);
 }
 
 /* Call [caml_oldify_one] on (at least) all the roots that point to the minor
    heap. */
-void caml_oldify_local_roots (void)
+void caml_oldify_local_roots (pctx ctx)
 {
   char * sp;
   uintnat retaddr;
@@ -245,12 +245,12 @@ void caml_oldify_local_roots (void)
 
 /* Call [darken] on all roots */
 
-void caml_darken_all_roots (void)
+void caml_darken_all_roots (pctx ctx)
 {
   caml_do_roots (caml_darken);
 }
 
-void caml_do_roots (scanning_action f)
+void caml_do_roots (pctx ctx, scanning_action f)
 {
   int i, j;
   value glob;
@@ -283,7 +283,7 @@ void caml_do_roots (scanning_action f)
   if (caml_scan_roots_hook != NULL) (*caml_scan_roots_hook)(f);
 }
 
-void caml_do_local_roots(scanning_action f, char * bottom_of_stack,
+void caml_do_local_roots(pctx ctx, scanning_action f, char * bottom_of_stack,
                          uintnat last_retaddr, value * gc_regs,
                          struct caml__roots_block * local_roots)
 {
@@ -359,7 +359,7 @@ void caml_do_local_roots(scanning_action f, char * bottom_of_stack,
 
 uintnat (*caml_stack_usage_hook)(void) = NULL;
 
-uintnat caml_stack_usage (void)
+uintnat caml_stack_usage (pctx ctx)
 {
   uintnat sz;
   sz = (value *) caml_top_of_stack - (value *) caml_bottom_of_stack;

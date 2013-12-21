@@ -256,7 +256,7 @@ void caml_free_for_heap (char *mem)
 
    See also: caml_compact_heap, which duplicates most of this function.
 */
-int caml_add_to_heap (char *m)
+int caml_add_to_heap (pctx ctx, char *m)
 {
                                      Assert (Chunk_size (m) % Page_size == 0);
 #ifdef DEBUG
@@ -301,7 +301,7 @@ int caml_add_to_heap (char *m)
    The request must be less than or equal to Max_wosize.
    Return NULL when out of memory.
 */
-static char *expand_heap (mlsize_t request)
+static char *expand_heap (pctx ctx, mlsize_t request)
 {
   char *mem, *hp, *prev;
   asize_t over_request, malloc_request, remain;
@@ -349,7 +349,7 @@ static char *expand_heap (mlsize_t request)
 /* Remove the heap chunk [chunk] from the heap and give the memory back
    to [free].
 */
-void caml_shrink_heap (char *chunk)
+void caml_shrink_heap (pctx ctx, char *chunk)
 {
   char **cp;
 
@@ -388,7 +388,7 @@ void caml_shrink_heap (char *chunk)
   caml_free_for_heap (chunk);
 }
 
-color_t caml_allocation_color (void *hp)
+color_t caml_allocation_color (pctx ctx)
 {
   if (caml_gc_phase == Phase_mark
       || (caml_gc_phase == Phase_sweep && (addr)hp >= (addr)caml_gc_sweep_hp)){
@@ -401,7 +401,7 @@ color_t caml_allocation_color (void *hp)
   }
 }
 
-CAMLexport value caml_alloc_shr (mlsize_t wosize, tag_t tag)
+CAMLexport value caml_alloc_shr (pctx ctx, mlsize_t wosize, tag_t tag)
 {
   char *hp, *new_block;
 
@@ -479,7 +479,7 @@ CAMLexport void caml_free_dependent_memory (mlsize_t nbytes)
    Note that only [res/max] is relevant.  The units (and kind of
    resource) can change between calls to [caml_adjust_gc_speed].
 */
-CAMLexport void caml_adjust_gc_speed (mlsize_t res, mlsize_t max)
+CAMLexport void caml_adjust_gc_speed (pctx ctx, mlsize_t res, mlsize_t max)
 {
   if (max == 0) max = 1;
   if (res > max) res = max;
@@ -569,7 +569,7 @@ CAMLexport CAMLweakdef void caml_modify (value *fp, value val)
   }
 }
 
-CAMLexport void * caml_stat_alloc (asize_t sz)
+CAMLexport void * caml_stat_alloc (pctx ctx, asize_t sz)
 {
   void * result = malloc (sz);
 

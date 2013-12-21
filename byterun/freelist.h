@@ -22,13 +22,13 @@
 
 extern asize_t caml_fl_cur_size;     /* size in words */
 
-char *caml_fl_allocate (mlsize_t);
-void caml_fl_init_merge (void);
-void caml_fl_reset (void);
-char *caml_fl_merge_block (char *);
-void caml_fl_add_blocks (char *);
-void caml_make_free_blocks (value *, mlsize_t, int, int);
-void caml_set_allocation_policy (uintnat);
+char *caml_fl_allocate (pctx ctx, mlsize_t);
+void caml_fl_init_merge (pctx ctx);
+void caml_fl_reset (pctx ctx);
+char *caml_fl_merge_block (pctx ctx, char *);
+void caml_fl_add_blocks (pctx ctx, char *);
+void caml_make_free_blocks (pctx ctx, value *, mlsize_t, int, int);
+void caml_set_allocation_policy (pctx ctx, uintnat);
 
 
 #endif /* CAML_FREELIST_H */

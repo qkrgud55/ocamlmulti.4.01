@@ -26,11 +26,11 @@
 extern "C" {
 #endif
 
-CAMLextern value caml_callback (value closure, value arg);
-CAMLextern value caml_callback2 (value closure, value arg1, value arg2);
-CAMLextern value caml_callback3 (value closure, value arg1, value arg2,
+CAMLextern value caml_callback (pctx ctx, value closure, value arg);
+CAMLextern value caml_callback2 (pctx ctx, value closure, value arg1, value arg2);
+CAMLextern value caml_callback3 (pctx ctx, value closure, value arg1, value arg2,
                                  value arg3);
-CAMLextern value caml_callbackN (value closure, int narg, value args[]);
+CAMLextern value caml_callbackN (pctx ctx, value closure, int narg, value args[]);
 
 CAMLextern value caml_callback_exn  (pctx ctx, value closure, value arg);
 CAMLextern value caml_callback2_exn (pctx ctx, value closure, value arg1, value arg2);
@@ -42,7 +42,7 @@ CAMLextern value caml_callbackN_exn (pctx ctx, value closure, int narg, value ar
 #define Is_exception_result(v) (((v) & 3) == 2)
 #define Extract_exception(v) ((v) & ~3)
 
-CAMLextern value * caml_named_value (char const * name);
+CAMLextern value * caml_named_value (pctx ctx, char const * name);
 
 CAMLextern void caml_main (char ** argv);
 CAMLextern void caml_startup (char ** argv);

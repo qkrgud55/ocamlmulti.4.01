@@ -26,7 +26,7 @@ value caml_weak_list_head = 0;
 static value weak_dummy = 0;
 value caml_weak_none = (value) &weak_dummy;
 
-CAMLprim value caml_weak_create (value len)
+CAMLprim value caml_weak_create (pctx ctx, value len)
 {
   mlsize_t size, i;
   value res;
@@ -43,7 +43,7 @@ CAMLprim value caml_weak_create (value len)
 #define None_val (Val_int(0))
 #define Some_tag 0
 
-static void do_set (value ar, mlsize_t offset, value v)
+static void do_set (pctx ctx, value ar, mlsize_t offset, value v)
 {
   if (Is_block (v) && Is_young (v)){
     /* modified version of Modify */
@@ -61,7 +61,7 @@ static void do_set (value ar, mlsize_t offset, value v)
   }
 }
 
-CAMLprim value caml_weak_set (value ar, value n, value el)
+CAMLprim value caml_weak_set (pctx ctx, value ar, value n, value el)
 {
   mlsize_t offset = Long_val (n) + 1;
                                                    Assert (Is_in_heap (ar));
@@ -80,7 +80,7 @@ CAMLprim value caml_weak_set (value ar, value n, value el)
 #define Setup_for_gc
 #define Restore_after_gc
 
-CAMLprim value caml_weak_get (value ar, value n)
+CAMLprim value caml_weak_get (pctx ctx, value ar, value n)
 {
   CAMLparam2 (ar, n);
   mlsize_t offset = Long_val (n) + 1;
@@ -105,7 +105,7 @@ CAMLprim value caml_weak_get (value ar, value n)
 #undef Setup_for_gc
 #undef Restore_after_gc
 
-CAMLprim value caml_weak_get_copy (value ar, value n)
+CAMLprim value caml_weak_get_copy (pctx ctx, value ar, value n)
 {
   CAMLparam2 (ar, n);
   mlsize_t offset = Long_val (n) + 1;
@@ -144,7 +144,7 @@ CAMLprim value caml_weak_get_copy (value ar, value n)
   CAMLreturn (res);
 }
 
-CAMLprim value caml_weak_check (value ar, value n)
+CAMLprim value caml_weak_check (pctx ctx, value ar, value n)
 {
   mlsize_t offset = Long_val (n) + 1;
                                                    Assert (Is_in_heap (ar));
@@ -154,7 +154,7 @@ CAMLprim value caml_weak_check (value ar, value n)
   return Val_bool (Field (ar, offset) != caml_weak_none);
 }
 
-CAMLprim value caml_weak_blit (value ars, value ofs,
+CAMLprim value caml_weak_blit (pctx ctx, value ars, value ofs,
                                value ard, value ofd, value len)
 {
   mlsize_t offset_s = Long_val (ofs) + 1;

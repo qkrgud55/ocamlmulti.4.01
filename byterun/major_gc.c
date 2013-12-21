@@ -53,7 +53,7 @@ static value *weak_prev;
 static unsigned long major_gc_counter = 0;
 #endif
 
-static void realloc_gray_vals (void)
+static void realloc_gray_vals (pctx ctx)
 {
   value *new;
 
@@ -80,7 +80,7 @@ static void realloc_gray_vals (void)
   }
 }
 
-void caml_darken (value v, value *p /* not used */)
+void caml_darken (pctx ctx, value v, value *p /* not used */)
 {
   if (Is_block (v) && Is_in_heap (v)) {
     header_t h = Hd_val (v);
@@ -103,7 +103,7 @@ void caml_darken (value v, value *p /* not used */)
   }
 }
 
-static void start_cycle (void)
+static void start_cycle (pctx ctx)
 {
   Assert (caml_gc_phase == Phase_idle);
   Assert (gray_vals_cur == gray_vals);
@@ -118,7 +118,7 @@ static void start_cycle (void)
 #endif
 }
 
-static void mark_slice (intnat work)
+static void mark_slice (pctx ctx, intnat work)
 {
   value *gray_vals_ptr;  /* Local copy of gray_vals_cur */
   value v, child;
@@ -281,7 +281,7 @@ static void mark_slice (intnat work)
   gray_vals_cur = gray_vals_ptr;
 }
 
-static void sweep_slice (intnat work)
+static void sweep_slice (pctx ctx, intnat work)
 {
   char *hp;
   header_t hd;
@@ -330,7 +330,7 @@ static void sweep_slice (intnat work)
    [howmuch] is the amount of work to do, 0 to let the GC compute it.
    Return the computed amount of work to do.
  */
-intnat caml_major_collection_slice (intnat howmuch)
+intnat caml_major_collection_slice (pctx ctx, intnat howmuch)
 {
   double p, dp;
   intnat computed_work;
@@ -435,7 +435,7 @@ intnat caml_major_collection_slice (intnat howmuch)
    free and live memory are only valid for a cycle done incrementally.
    Besides, this function is called by caml_compact_heap_maybe.
 */
-void caml_finish_major_cycle (void)
+void caml_finish_major_cycle (pctx ctx)
 {
   if (caml_gc_phase == Phase_idle) start_cycle ();
   while (caml_gc_phase == Phase_mark) mark_slice (LONG_MAX);
@@ -460,7 +460,7 @@ static asize_t clip_heap_chunk_size (asize_t request)
 /* Make sure the request is >= caml_major_heap_increment, then call
    clip_heap_chunk_size, then make sure the result is >= request.
 */
-asize_t caml_round_heap_chunk_size (asize_t request)
+asize_t caml_round_heap_chunk_size (pctx ctx, asize_t request)
 {
   asize_t result = request;
 
@@ -476,7 +476,7 @@ asize_t caml_round_heap_chunk_size (asize_t request)
   return result;
 }
 
-void caml_init_major_heap (asize_t heap_size)
+void caml_init_major_heap (pctx ctx, asize_t heap_size)
 {
   caml_stat_heap_size = clip_heap_chunk_size (heap_size);
   caml_stat_top_heap_size = caml_stat_heap_size;

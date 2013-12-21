@@ -25,7 +25,7 @@
 #include "weak.h"
 
 extern uintnat caml_percent_free;                   /* major_gc.c */
-extern void caml_shrink_heap (char *);              /* memory.c */
+extern void caml_shrink_heap (pctx ctx, char *);              /* memory.c */
 
 /* Encoded headers: the color is stored in the 2 least significant bits.
    (For pointer inversion, we need to distinguish headers from pointers.)
@@ -51,7 +51,7 @@ extern void caml_shrink_heap (char *);              /* memory.c */
 
 typedef uintnat word;
 
-static void invert_pointer_at (word *p)
+static void invert_pointer_at (pctx ctx, word *p)
 {
   word q = *p;
                                             Assert (Ecolor ((intnat) p) == 0);
@@ -105,14 +105,14 @@ static void invert_pointer_at (word *p)
   }
 }
 
-static void invert_root (value v, value *p)
+static void invert_root (pctx ctx, value v, value *p)
 {
   invert_pointer_at ((word *) p);
 }
 
 static char *compact_fl;
 
-static void init_compact_allocate (void)
+static void init_compact_allocate (pctx ctx)
 {
   char *ch = caml_heap_start;
   while (ch != NULL){
@@ -122,7 +122,7 @@ static void init_compact_allocate (void)
   compact_fl = caml_heap_start;
 }
 
-static char *compact_allocate (mlsize_t size)
+static char *compact_allocate (pctx ctx, mlsize_t size)
                                       /* in bytes, including header */
 {
   char *chunk, *adr;
@@ -142,7 +142,7 @@ static char *compact_allocate (mlsize_t size)
   return adr;
 }
 
-static void do_compaction (void)
+static void do_compaction (pctx ctx)
 {
   char *ch, *chend;
                                           Assert (caml_gc_phase == Phase_idle);
@@ -394,7 +394,7 @@ static void do_compaction (void)
 
 uintnat caml_percent_max;  /* used in gc_ctrl.c and memory.c */
 
-void caml_compact_heap (void)
+void caml_compact_heap (pctx ctx)
 {
   uintnat target_words, target_size, live;
 
@@ -458,7 +458,7 @@ void caml_compact_heap (void)
   }
 }
 
-void caml_compact_heap_maybe (void)
+void caml_compact_heap_maybe (pctx ctx)
 {
   /* Estimated free words in the heap:
          FW = fl_size_at_change + 3 * (caml_fl_cur_size

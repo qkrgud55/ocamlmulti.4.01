@@ -56,7 +56,7 @@ CAMLexport void caml_Store_double_val(value val, double dbl)
 
 #endif
 
-CAMLexport value caml_copy_double(double d)
+CAMLexport value caml_copy_double(pctx ctx, double d)
 {
   value res;
 
@@ -69,7 +69,7 @@ CAMLexport value caml_copy_double(double d)
   return res;
 }
 
-CAMLprim value caml_format_float(value fmt, value arg)
+CAMLprim value caml_format_float(pctx ctx, value fmt, value arg)
 {
 #define MAX_DIGITS 350
 /* Max number of decimal digits in a "natural" (not artificially padded)
@@ -164,7 +164,7 @@ CAMLprim value caml_format_float(value fmt, value arg)
   caml_failwith("float_of_string");
 }
 
-CAMLprim value caml_float_of_string(value vs)
+CAMLprim value caml_float_of_string(pctx ctx, value vs)
 {
   char parse_buffer[64];
   char * buf, * src, * dst, * end;
@@ -195,57 +195,57 @@ CAMLprim value caml_int_of_float(value f)
   return Val_long((intnat) Double_val(f));
 }
 
-CAMLprim value caml_float_of_int(value n)
+CAMLprim value caml_float_of_int(pctx ctx, value n)
 {
   return caml_copy_double((double) Long_val(n));
 }
 
-CAMLprim value caml_neg_float(value f)
+CAMLprim value caml_neg_float(pctx ctx, value f)
 {
   return caml_copy_double(- Double_val(f));
 }
 
-CAMLprim value caml_abs_float(value f)
+CAMLprim value caml_abs_float(pctx ctx, value f)
 {
   return caml_copy_double(fabs(Double_val(f)));
 }
 
-CAMLprim value caml_add_float(value f, value g)
+CAMLprim value caml_add_float(pctx ctx, value f, value g)
 {
   return caml_copy_double(Double_val(f) + Double_val(g));
 }
 
-CAMLprim value caml_sub_float(value f, value g)
+CAMLprim value caml_sub_float(pctx ctx, value f, value g)
 {
   return caml_copy_double(Double_val(f) - Double_val(g));
 }
 
-CAMLprim value caml_mul_float(value f, value g)
+CAMLprim value caml_mul_float(pctx ctx, value f, value g)
 {
   return caml_copy_double(Double_val(f) * Double_val(g));
 }
 
-CAMLprim value caml_div_float(value f, value g)
+CAMLprim value caml_div_float(pctx ctx, value f, value g)
 {
   return caml_copy_double(Double_val(f) / Double_val(g));
 }
 
-CAMLprim value caml_exp_float(value f)
+CAMLprim value caml_exp_float(pctx ctx, value f)
 {
   return caml_copy_double(exp(Double_val(f)));
 }
 
-CAMLprim value caml_floor_float(value f)
+CAMLprim value caml_floor_float(pctx ctx, value f)
 {
   return caml_copy_double(floor(Double_val(f)));
 }
 
-CAMLprim value caml_fmod_float(value f1, value f2)
+CAMLprim value caml_fmod_float(pctx ctx, value f1, value f2)
 {
   return caml_copy_double(fmod(Double_val(f1), Double_val(f2)));
 }
 
-CAMLprim value caml_frexp_float(value f)
+CAMLprim value caml_frexp_float(pctx ctx, value f)
 {
   CAMLparam1 (f);
   CAMLlocal2 (res, mantissa);
@@ -258,22 +258,22 @@ CAMLprim value caml_frexp_float(value f)
   CAMLreturn (res);
 }
 
-CAMLprim value caml_ldexp_float(value f, value i)
+CAMLprim value caml_ldexp_float(pctx ctx, value f, value i)
 {
   return caml_copy_double(ldexp(Double_val(f), Int_val(i)));
 }
 
-CAMLprim value caml_log_float(value f)
+CAMLprim value caml_log_float(pctx ctx, value f)
 {
   return caml_copy_double(log(Double_val(f)));
 }
 
-CAMLprim value caml_log10_float(value f)
+CAMLprim value caml_log10_float(pctx ctx, value f)
 {
   return caml_copy_double(log10(Double_val(f)));
 }
 
-CAMLprim value caml_modf_float(value f)
+CAMLprim value caml_modf_float(pctx ctx, value f)
 {
   double frem;
 
@@ -288,67 +288,67 @@ CAMLprim value caml_modf_float(value f)
   CAMLreturn (res);
 }
 
-CAMLprim value caml_sqrt_float(value f)
+CAMLprim value caml_sqrt_float(pctx ctx, value f)
 {
   return caml_copy_double(sqrt(Double_val(f)));
 }
 
-CAMLprim value caml_power_float(value f, value g)
+CAMLprim value caml_power_float(pctx ctx, value f, value g)
 {
   return caml_copy_double(pow(Double_val(f), Double_val(g)));
 }
 
-CAMLprim value caml_sin_float(value f)
+CAMLprim value caml_sin_float(pctx ctx, value f)
 {
   return caml_copy_double(sin(Double_val(f)));
 }
 
-CAMLprim value caml_sinh_float(value f)
+CAMLprim value caml_sinh_float(pctx ctx, value f)
 {
   return caml_copy_double(sinh(Double_val(f)));
 }
 
-CAMLprim value caml_cos_float(value f)
+CAMLprim value caml_cos_float(pctx ctx, value f)
 {
   return caml_copy_double(cos(Double_val(f)));
 }
 
-CAMLprim value caml_cosh_float(value f)
+CAMLprim value caml_cosh_float(pctx ctx, value f)
 {
   return caml_copy_double(cosh(Double_val(f)));
 }
 
-CAMLprim value caml_tan_float(value f)
+CAMLprim value caml_tan_float(pctx ctx, value f)
 {
   return caml_copy_double(tan(Double_val(f)));
 }
 
-CAMLprim value caml_tanh_float(value f)
+CAMLprim value caml_tanh_float(pctx ctx, value f)
 {
   return caml_copy_double(tanh(Double_val(f)));
 }
 
-CAMLprim value caml_asin_float(value f)
+CAMLprim value caml_asin_float(pctx ctx, value f)
 {
   return caml_copy_double(asin(Double_val(f)));
 }
 
-CAMLprim value caml_acos_float(value f)
+CAMLprim value caml_acos_float(pctx ctx, value f)
 {
   return caml_copy_double(acos(Double_val(f)));
 }
 
-CAMLprim value caml_atan_float(value f)
+CAMLprim value caml_atan_float(pctx ctx, value f)
 {
   return caml_copy_double(atan(Double_val(f)));
 }
 
-CAMLprim value caml_atan2_float(value f, value g)
+CAMLprim value caml_atan2_float(pctx ctx, value f, value g)
 {
   return caml_copy_double(atan2(Double_val(f), Double_val(g)));
 }
 
-CAMLprim value caml_ceil_float(value f)
+CAMLprim value caml_ceil_float(pctx ctx, value f)
 {
   return caml_copy_double(ceil(Double_val(f)));
 }
@@ -369,7 +369,7 @@ CAMLexport double caml_hypot(double x, double y)
 #endif
 }
 
-CAMLprim value caml_hypot_float(value f, value g)
+CAMLprim value caml_hypot_float(pctx ctx, value f, value g)
 {
   return caml_copy_double(caml_hypot(Double_val(f), Double_val(g)));
 }
@@ -403,12 +403,12 @@ CAMLexport double caml_log1p(double x)
 #endif
 }
 
-CAMLprim value caml_expm1_float(value f)
+CAMLprim value caml_expm1_float(pctx ctx, value f)
 {
   return caml_copy_double(caml_expm1(Double_val(f)));
 }
 
-CAMLprim value caml_log1p_float(value f)
+CAMLprim value caml_log1p_float(pctx ctx, value f)
 {
   return caml_copy_double(caml_log1p(Double_val(f)));
 }
@@ -436,7 +436,7 @@ CAMLexport double caml_copysign(double x, double y)
 #endif
 }
 
-CAMLprim value caml_copysign_float(value f, value g)
+CAMLprim value caml_copysign_float(pctx ctx, value f, value g)
 {
   return caml_copy_double(caml_copysign(Double_val(f), Double_val(g)));
 }

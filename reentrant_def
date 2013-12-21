@@ -735,7 +735,7 @@ byterun/floats.c:CAMLprim value caml_copysign_float_r(pctxt ctx, value f, value 
 byterun/custom.h:CAMLextern value caml_alloc_custom_r(pctxt ctx, struct custom_operations * ops,
 byterun/custom.h:CAMLextern void caml_register_custom_operations_r(pctxt ctx, struct custom_operations * ops);
 byterun/custom.h:extern struct custom_operations * caml_find_custom_operations_r(pctxt ctx, char * ident);
-byterun/custom.h:          caml_final_custom_operations_r(pctxt ctx, void (*fn)(value));
+byterun/custom.h:extern struct custom_operations * caml_final_custom_operations_r(pctxt ctx, void (*fn)(value));
 byterun/custom.h:extern void caml_init_custom_operations_r(pctxt ctx);
 byterun/minor_gc.c:void caml_set_minor_heap_size_r (pctxt ctx, asize_t size)
 byterun/minor_gc.c:void caml_oldify_one_r (pctxt ctx, value v, value *p)
@@ -1120,7 +1120,7 @@ stdlib_r/caml_tmp/floats.c:CAMLprim value caml_copysign_float_r(pctxt ctx, value
 stdlib_r/caml_tmp/custom.h:CAMLextern value caml_alloc_custom_r(pctxt ctx, struct custom_operations * ops,
 stdlib_r/caml_tmp/custom.h:CAMLextern void caml_register_custom_operations_r(pctxt ctx, struct custom_operations * ops);
 stdlib_r/caml_tmp/custom.h:extern struct custom_operations * caml_find_custom_operations_r(pctxt ctx, char * ident);
-stdlib_r/caml_tmp/custom.h:          caml_final_custom_operations_r(pctxt ctx, void (*fn)(value));
+stdlib_r/caml_tmp/custom.h:extern struct custom_operations * caml_final_custom_operations_r(pctxt ctx, void (*fn)(value));
 stdlib_r/caml_tmp/custom.h:extern void caml_init_custom_operations_r(pctxt ctx);
 stdlib_r/caml_tmp/minor_gc.c:void caml_set_minor_heap_size_r (pctxt ctx, asize_t size)
 stdlib_r/caml_tmp/minor_gc.c:void caml_oldify_one_r (pctxt ctx, value v, value *p)

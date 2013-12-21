@@ -147,7 +147,7 @@ void (*caml_termination_hook)(void *) = NULL;
 extern value caml_start_program_r (pctx);
 extern value caml_start_program (void);
 extern void caml_init_ieee_floats (void);
-extern void caml_init_signals (void);
+extern void caml_init_signals (pctx ctx);
 
 #ifdef _MSC_VER
 

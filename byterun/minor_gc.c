@@ -72,7 +72,7 @@ static void clear_table (struct caml_ref_table *tbl)
 }
 
 /* size in bytes */
-void caml_set_minor_heap_size (asize_t size)
+void caml_set_minor_heap_size (pctx ctx, asize_t size)
 {
   char *new_heap;
   void *new_heap_base;
@@ -107,7 +107,7 @@ static value oldify_todo_list = 0;
 /* Note that the tests on the tag depend on the fact that Infix_tag,
    Forward_tag, and No_scan_tag are contiguous. */
 
-void caml_oldify_one (value v, value *p)
+void caml_oldify_one (pctx ctx, value v, value *p)
 {
   value result;
   header_t hd;
@@ -194,7 +194,7 @@ void caml_oldify_one (value v, value *p)
    Note that [caml_oldify_one] itself is called by oldify_mopup, so we
    have to be careful to remove the first entry from the list before
    oldifying its fields. */
-void caml_oldify_mopup (void)
+void caml_oldify_mopup (pctx ctx)
 {
   value v, new_v, f;
   mlsize_t i;
@@ -223,7 +223,7 @@ void caml_oldify_mopup (void)
 /* Make sure the minor heap is empty by performing a minor collection
    if needed.
 */
-void caml_empty_minor_heap (void)
+void caml_empty_minor_heap (pctx ctx)
 {
   value **r;
 
@@ -269,7 +269,7 @@ void caml_empty_minor_heap (void)
    functions, etc.
    Leave the minor heap empty.
 */
-CAMLexport void caml_minor_collection (void)
+CAMLexport void caml_minor_collection (pctx ctx)
 {
   intnat prev_alloc_words = caml_allocated_words;
 
@@ -285,14 +285,14 @@ CAMLexport void caml_minor_collection (void)
   caml_empty_minor_heap ();
 }
 
-CAMLexport value caml_check_urgent_gc (value extra_root)
+CAMLexport value caml_check_urgent_gc (pctx ctx, value extra_root)
 {
   CAMLparam1 (extra_root);
   if (caml_force_major_slice) caml_minor_collection();
   CAMLreturn (extra_root);
 }
 
-void caml_realloc_ref_table (struct caml_ref_table *tbl)
+void caml_realloc_ref_table (pctx ctx, struct caml_ref_table *tbl)
 {                                           Assert (tbl->ptr == tbl->limit);
                                             Assert (tbl->limit <= tbl->end);
                                       Assert (tbl->limit >= tbl->threshold);

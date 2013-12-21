@@ -45,7 +45,7 @@ static uintnat old = 0, young = 0, size = 0;
 static struct to_do *to_do_hd = NULL;
 static struct to_do *to_do_tl = NULL;
 
-static void alloc_to_do (int size)
+static void alloc_to_do (pctx ctx, int size)
 {
   struct to_do *result = malloc (sizeof (struct to_do)
                                  + size * sizeof (struct final));
@@ -66,7 +66,7 @@ static void alloc_to_do (int size)
    darken them.
    The recent set is empty.
 */
-void caml_final_update (void)
+void caml_final_update (pctx ctx)
 {
   uintnat i, j, k;
   uintnat todo_count = 0;
@@ -121,7 +121,7 @@ static int running_finalisation_function = 0;
 /* Call the finalisation functions for the finalising set.
    Note that this function must be reentrant.
 */
-void caml_final_do_calls (void)
+void caml_final_do_calls (pctx ctx)
 {
   struct final f;
   value res;
@@ -159,7 +159,7 @@ void caml_final_do_calls (void)
    This is called by the major GC and the compactor
    through [caml_darken_all_roots].
 */
-void caml_final_do_strong_roots (scanning_action f)
+void caml_final_do_strong_roots (pctx ctx, scanning_action f)
 {
   uintnat i;
   struct to_do *todo;
@@ -179,7 +179,7 @@ void caml_final_do_strong_roots (scanning_action f)
    The recent set is empty.
    This is called directly by the compactor.
 */
-void caml_final_do_weak_roots (scanning_action f)
+void caml_final_do_weak_roots (pctx ctx, scanning_action f)
 {
   uintnat i;
 
@@ -190,7 +190,7 @@ void caml_final_do_weak_roots (scanning_action f)
 /* Call [*f] on the closures and values of the recent set.
    This is called by the minor GC through [caml_oldify_local_roots].
 */
-void caml_final_do_young_roots (scanning_action f)
+void caml_final_do_young_roots (pctx ctx, scanning_action f)
 {
   uintnat i;
 
@@ -205,13 +205,13 @@ void caml_final_do_young_roots (scanning_action f)
    This is called at the end of each minor collection.
    The minor heap must be empty when this is called.
 */
-void caml_final_empty_young (void)
+void caml_final_empty_young (pctx ctx)
 {
   old = young;
 }
 
 /* Put (f,v) in the recent set. */
-CAMLprim value caml_final_register (value f, value v)
+CAMLprim value caml_final_register (pctx ctx, value f, value v)
 {
   if (!(Is_block (v) && Is_in_heap_or_young(v))) {
     caml_invalid_argument ("Gc.finalise");
@@ -246,7 +246,7 @@ CAMLprim value caml_final_register (value f, value v)
   return Val_unit;
 }
 
-CAMLprim value caml_final_release (value unit)
+CAMLprim value caml_final_release (pctx ctx, value unit)
 {
   running_finalisation_function = 0;
   return Val_unit;

@@ -120,7 +120,7 @@ static void check_block (char *hp)
    gather statistics; return the stats if [returnstats] is true,
    otherwise return [Val_unit].
 */
-static value heap_stats (int returnstats)
+static value heap_stats (pctx ctx, int returnstats)
 {
   CAMLparam0 ();
   intnat live_words = 0, live_blocks = 0,
@@ -253,13 +253,13 @@ void caml_heap_check (void)
 }
 #endif
 
-CAMLprim value caml_gc_stat(value v)
+CAMLprim value caml_gc_stat(pctx ctx, value v)
 {
   Assert (v == Val_unit);
   return heap_stats (1);
 }
 
-CAMLprim value caml_gc_quick_stat(value v)
+CAMLprim value caml_gc_quick_stat(pctx ctx, value v)
 {
   CAMLparam0 ();
   CAMLlocal1 (res);
@@ -296,7 +296,7 @@ CAMLprim value caml_gc_quick_stat(value v)
   CAMLreturn (res);
 }
 
-CAMLprim value caml_gc_counters(value v)
+CAMLprim value caml_gc_counters(pctx ctx, value v)
 {
   CAMLparam0 ();   /* v is ignored */
   CAMLlocal1 (res);
@@ -314,7 +314,7 @@ CAMLprim value caml_gc_counters(value v)
   CAMLreturn (res);
 }
 
-CAMLprim value caml_gc_get(value v)
+CAMLprim value caml_gc_get(pctx ctx, value v)
 {
   CAMLparam0 ();   /* v is ignored */
   CAMLlocal1 (res);
@@ -361,7 +361,7 @@ static intnat norm_minsize (intnat s)
   return s;
 }
 
-CAMLprim value caml_gc_set(value v)
+CAMLprim value caml_gc_set(pctx ctx, value v)
 {
   uintnat newpf, newpm;
   asize_t newheapincr;
@@ -410,13 +410,13 @@ CAMLprim value caml_gc_set(value v)
   return Val_unit;
 }
 
-CAMLprim value caml_gc_minor(value v)
+CAMLprim value caml_gc_minor(pctx ctx, value v)
 {                                                    Assert (v == Val_unit);
   caml_minor_collection ();
   return Val_unit;
 }
 
-static void test_and_compact (void)
+static void test_and_compact (pctx ctx)
 {
   float fp;
 
@@ -432,7 +432,7 @@ static void test_and_compact (void)
   }
 }
 
-CAMLprim value caml_gc_major(value v)
+CAMLprim value caml_gc_major(pctx ctx, value v)
 {                                                    Assert (v == Val_unit);
   caml_gc_message (0x1, "Major GC cycle requested\n", 0);
   caml_empty_minor_heap ();
@@ -442,7 +442,7 @@ CAMLprim value caml_gc_major(value v)
   return Val_unit;
 }
 
-CAMLprim value caml_gc_full_major(value v)
+CAMLprim value caml_gc_full_major(pctx ctx, value v)
 {                                                    Assert (v == Val_unit);
   caml_gc_message (0x1, "Full major GC cycle requested\n", 0);
   caml_empty_minor_heap ();
@@ -455,14 +455,14 @@ CAMLprim value caml_gc_full_major(value v)
   return Val_unit;
 }
 
-CAMLprim value caml_gc_major_slice (value v)
+CAMLprim value caml_gc_major_slice (pctx ctx, value v)
 {
   Assert (Is_long (v));
   caml_empty_minor_heap ();
   return Val_long (caml_major_collection_slice (Long_val (v)));
 }
 
-CAMLprim value caml_gc_compaction(value v)
+CAMLprim value caml_gc_compaction(pctx ctx, value v)
 {                                                    Assert (v == Val_unit);
   caml_gc_message (0x10, "Heap compaction requested\n", 0);
   caml_empty_minor_heap ();
@@ -475,7 +475,7 @@ CAMLprim value caml_gc_compaction(value v)
   return Val_unit;
 }
 
-void caml_init_gc (uintnat minor_size, uintnat major_size,
+void caml_init_gc (pctx ctx, uintnat minor_size, uintnat major_size,
                    uintnat major_incr, uintnat percent_fr,
                    uintnat percent_m)
 {

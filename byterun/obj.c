@@ -80,7 +80,7 @@ CAMLprim value caml_obj_set_tag (value arg, value new_tag)
   return Val_unit;
 }
 
-CAMLprim value caml_obj_block(value tag, value size)
+CAMLprim value caml_obj_block(pctx ctx, value tag, value size)
 {
   value res;
   mlsize_t sz, i;
@@ -96,7 +96,7 @@ CAMLprim value caml_obj_block(value tag, value size)
   return res;
 }
 
-CAMLprim value caml_obj_dup(value arg)
+CAMLprim value caml_obj_dup(pctx ctx, value arg)
 {
   CAMLparam1 (arg);
   CAMLlocal1 (res);
@@ -128,7 +128,7 @@ CAMLprim value caml_obj_dup(value arg)
    with the leftover part of the object: this is needed in the major
    heap and harmless in the minor heap.
 */
-CAMLprim value caml_obj_truncate (value v, value newsize)
+CAMLprim value caml_obj_truncate (pctx ctx, value v, value newsize)
 {
   mlsize_t new_wosize = Long_val (newsize);
   header_t hd = Hd_val (v);
@@ -183,7 +183,7 @@ CAMLprim value caml_lazy_follow_forward (value v)
   }
 }
 
-CAMLprim value caml_lazy_make_forward (value v)
+CAMLprim value caml_lazy_make_forward (pctx ctx, value v)
 {
   CAMLparam1 (v);
   CAMLlocal1 (res);

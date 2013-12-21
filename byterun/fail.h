@@ -64,23 +64,23 @@ int caml_is_special_exception(value exn);
 extern "C" {
 #endif
 
-CAMLextern void caml_raise (value bucket) Noreturn;
-CAMLextern void caml_raise_constant (value tag) Noreturn;
-CAMLextern void caml_raise_with_arg (value tag, value arg) Noreturn;
-CAMLextern void caml_raise_with_args (value tag, int nargs, value arg[])
+CAMLextern void caml_raise (pctx ctx, value bucket) Noreturn;
+CAMLextern void caml_raise_constant (pctx ctx, value tag) Noreturn;
+CAMLextern void caml_raise_with_arg (pctx ctx, value tag, value arg) Noreturn;
+CAMLextern void caml_raise_with_args (pctx ctx, value tag, int nargs, value arg[])
                 Noreturn;
-CAMLextern void caml_raise_with_string (value tag, char const * msg) Noreturn;
-CAMLextern void caml_failwith (char const *) Noreturn;
-CAMLextern void caml_invalid_argument (char const *) Noreturn;
-CAMLextern void caml_raise_out_of_memory (void) Noreturn;
-CAMLextern void caml_raise_stack_overflow (void) Noreturn;
-CAMLextern void caml_raise_sys_error (value) Noreturn;
-CAMLextern void caml_raise_end_of_file (void) Noreturn;
-CAMLextern void caml_raise_zero_divide (void) Noreturn;
-CAMLextern void caml_raise_not_found (void) Noreturn;
+CAMLextern void caml_raise_with_string (pctx ctx, value tag, char const * msg) Noreturn;
+CAMLextern void caml_failwith (pctx ctx, char const *) Noreturn;
+CAMLextern void caml_invalid_argument (pctx ctx, char const *) Noreturn;
+CAMLextern void caml_raise_out_of_memory (pctx ctx) Noreturn;
+CAMLextern void caml_raise_stack_overflow (pctx ctx) Noreturn;
+CAMLextern void caml_raise_sys_error (pctx ctx, value) Noreturn;
+CAMLextern void caml_raise_end_of_file (pctx ctx) Noreturn;
+CAMLextern void caml_raise_zero_divide (pctx ctx) Noreturn;
+CAMLextern void caml_raise_not_found (pctx ctx) Noreturn;
 CAMLextern void caml_init_exceptions (void);
-CAMLextern void caml_array_bound_error (void) Noreturn;
-CAMLextern void caml_raise_sys_blocked_io (void) Noreturn;
+CAMLextern void caml_array_bound_error (pctx ctx) Noreturn;
+CAMLextern void caml_raise_sys_blocked_io (pctx ctx) Noreturn;
 
 #ifdef __cplusplus
 }

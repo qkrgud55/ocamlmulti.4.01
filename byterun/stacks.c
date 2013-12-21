@@ -88,7 +88,7 @@ CAMLprim value caml_ensure_stack_capacity(value required_space)
   return Val_unit;
 }
 
-void caml_change_max_stack_size (uintnat new_max_size)
+void caml_change_max_stack_size (pctx ctx, uintnat new_max_size)
 {
   asize_t size = caml_stack_high - caml_extern_sp
                  + Stack_threshold / sizeof (value);
@@ -103,7 +103,7 @@ void caml_change_max_stack_size (uintnat new_max_size)
 
 CAMLexport uintnat (*caml_stack_usage_hook)(void) = NULL;
 
-uintnat caml_stack_usage(void)
+uintnat caml_stack_usage(pctx ctx)
 {
   uintnat sz;
   sz = caml_stack_high - caml_extern_sp;

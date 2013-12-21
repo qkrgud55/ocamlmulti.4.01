@@ -64,7 +64,7 @@ enum {
 
 /* Start or stop the backtrace machinery */
 
-CAMLprim value caml_record_backtrace(value vflag)
+CAMLprim value caml_record_backtrace(pctx ctx, value vflag)
 {
   int flag = Int_val(vflag);
 
@@ -85,7 +85,7 @@ CAMLprim value caml_record_backtrace(value vflag)
 
 /* Return the status of the backtrace machinery */
 
-CAMLprim value caml_backtrace_status(value vunit)
+CAMLprim value caml_backtrace_status(pctx ctx, value vunit)
 {
   return Val_bool(caml_backtrace_active);
 }
@@ -93,7 +93,7 @@ CAMLprim value caml_backtrace_status(value vunit)
 /* Store the return addresses contained in the given stack fragment
    into the backtrace array */
 
-void caml_stash_backtrace(value exn, code_t pc, value * sp)
+void caml_stash_backtrace(pctx ctx, value exn, code_t pc, value * sp)
 {
   code_t end_code = (code_t) ((char *) caml_start_code + caml_code_size);
   if (pc != NULL) pc = pc - 1;
@@ -276,7 +276,7 @@ struct loc_info {
   int loc_endchr;
 };
 
-static void extract_location_info(value events, code_t pc,
+static void extract_location_info(pctx ctx, value events, code_t pc,
                                   /*out*/ struct loc_info * li)
 {
   value ev, ev_start;
@@ -301,7 +301,7 @@ static void extract_location_info(value events, code_t pc,
 
 /* Print location information -- same behavior as in Printexc */
 
-static void print_location(struct loc_info * li, int index)
+static void print_location(pctx ctx, struct loc_info * li, int index)
 {
   char * info;
 
@@ -331,7 +331,7 @@ static void print_location(struct loc_info * li, int index)
 
 /* Print a backtrace */
 
-CAMLexport void caml_print_exception_backtrace(void)
+CAMLexport void caml_print_exception_backtrace(pctx ctx)
 {
   value events;
   int i;
@@ -399,7 +399,7 @@ CAMLprim value caml_get_exception_raw_backtrace(value unit)
 
 /* the function below is deprecated: see asmrun/backtrace.c */
 
-CAMLprim value caml_get_exception_backtrace(value unit)
+CAMLprim value caml_get_exception_backtrace(pctx ctx, value unit)
 {
   CAMLparam0();
   CAMLlocal2(raw, res);

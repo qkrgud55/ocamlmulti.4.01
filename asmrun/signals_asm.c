@@ -63,7 +63,7 @@ extern char caml_system__code_begin, caml_system__code_end;
    Only generated assembly code can call [caml_garbage_collection],
    via the caml_call_gc assembly stubs.  */
 
-void caml_garbage_collection(void)
+void caml_garbage_collection(pctx ctx)
 {
   caml_young_limit = caml_young_start;
   if (caml_young_ptr < caml_young_start || caml_force_major_slice) {
@@ -97,7 +97,7 @@ DECLARE_SIGNAL_HANDLER(handle_signal)
   errno = saved_errno;
 }
 
-int caml_set_signal_action(int signo, int action)
+int caml_set_signal_action(pctx ctx, int signo, int action)
 {
   signal_handler oldact;
 #ifdef POSIX_SIGNALS
@@ -244,7 +244,7 @@ DECLARE_SIGNAL_HANDLER(segv_handler)
 
 /* Initialization of signal stuff */
 
-void caml_init_signals(void)
+void caml_init_signals(pctx ctx)
 {
   /* Bound-check trap handling */
 #if defined(TARGET_sparc) && defined(SYS_solaris)

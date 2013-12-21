@@ -33,14 +33,14 @@ CAMLexport int caml_is_double_array(value array)
   return (Tag_val(array) == Double_array_tag);
 }
 
-CAMLprim value caml_array_get_addr(value array, value index)
+CAMLprim value caml_array_get_addr(pctx ctx, value array, value index)
 {
   intnat idx = Long_val(index);
   if (idx < 0 || idx >= Wosize_val(array)) caml_array_bound_error();
   return Field(array, idx);
 }
 
-CAMLprim value caml_array_get_float(value array, value index)
+CAMLprim value caml_array_get_float(pctx ctx, value array, value index)
 {
   intnat idx = Long_val(index);
   double d;
@@ -58,7 +58,7 @@ CAMLprim value caml_array_get_float(value array, value index)
   return res;
 }
 
-CAMLprim value caml_array_get(value array, value index)
+CAMLprim value caml_array_get(pctx ctx, value array, value index)
 {
   if (Tag_val(array) == Double_array_tag)
     return caml_array_get_float(array, index);
@@ -66,7 +66,7 @@ CAMLprim value caml_array_get(value array, value index)
     return caml_array_get_addr(array, index);
 }
 
-CAMLprim value caml_array_set_addr(value array, value index, value newval)
+CAMLprim value caml_array_set_addr(pctx ctx, value array, value index, value newval)
 {
   intnat idx = Long_val(index);
   if (idx < 0 || idx >= Wosize_val(array)) caml_array_bound_error();
@@ -74,7 +74,7 @@ CAMLprim value caml_array_set_addr(value array, value index, value newval)
   return Val_unit;
 }
 
-CAMLprim value caml_array_set_float(value array, value index, value newval)
+CAMLprim value caml_array_set_float(pctx ctx, value array, value index, value newval)
 {
   intnat idx = Long_val(index);
   if (idx < 0 || idx >= Wosize_val(array) / Double_wosize)
@@ -83,7 +83,7 @@ CAMLprim value caml_array_set_float(value array, value index, value newval)
   return Val_unit;
 }
 
-CAMLprim value caml_array_set(value array, value index, value newval)
+CAMLprim value caml_array_set(pctx ctx, value array, value index, value newval)
 {
   if (Tag_val(array) == Double_array_tag)
     return caml_array_set_float(array, index, newval);
@@ -91,7 +91,7 @@ CAMLprim value caml_array_set(value array, value index, value newval)
     return caml_array_set_addr(array, index, newval);
 }
 
-CAMLprim value caml_array_unsafe_get_float(value array, value index)
+CAMLprim value caml_array_unsafe_get_float(pctx ctx, value array, value index)
 {
   double d;
   value res;
@@ -106,7 +106,7 @@ CAMLprim value caml_array_unsafe_get_float(value array, value index)
   return res;
 }
 
-CAMLprim value caml_array_unsafe_get(value array, value index)
+CAMLprim value caml_array_unsafe_get(pctx ctx, value array, value index)
 {
   if (Tag_val(array) == Double_array_tag)
     return caml_array_unsafe_get_float(array, index);
@@ -114,7 +114,7 @@ CAMLprim value caml_array_unsafe_get(value array, value index)
     return Field(array, Long_val(index));
 }
 
-CAMLprim value caml_array_unsafe_set_addr(value array, value index,value newval)
+CAMLprim value caml_array_unsafe_set_addr(pctx ctx, value array, value index,value newval)
 {
   intnat idx = Long_val(index);
   Modify(&Field(array, idx), newval);
@@ -127,7 +127,7 @@ CAMLprim value caml_array_unsafe_set_float(value array,value index,value newval)
   return Val_unit;
 }
 
-CAMLprim value caml_array_unsafe_set(value array, value index, value newval)
+CAMLprim value caml_array_unsafe_set(pctx ctx, value array, value index, value newval)
 {
   if (Tag_val(array) == Double_array_tag)
     return caml_array_unsafe_set_float(array, index, newval);
@@ -135,7 +135,7 @@ CAMLprim value caml_array_unsafe_set(value array, value index, value newval)
     return caml_array_unsafe_set_addr(array, index, newval);
 }
 
-CAMLprim value caml_make_vect(value len, value init)
+CAMLprim value caml_make_vect(pctx ctx, value len, value init)
 {
   CAMLparam2 (len, init);
   CAMLlocal1 (res);
@@ -177,7 +177,7 @@ CAMLprim value caml_make_vect(value len, value init)
   CAMLreturn (res);
 }
 
-CAMLprim value caml_make_array(value init)
+CAMLprim value caml_make_array(pctx ctx, value init)
 {
   CAMLparam1 (init);
   mlsize_t wsize, size, i;
@@ -206,7 +206,7 @@ CAMLprim value caml_make_array(value init)
 
 /* Blitting */
 
-CAMLprim value caml_array_blit(value a1, value ofs1, value a2, value ofs2,
+CAMLprim value caml_array_blit(pctx ctx, value a1, value ofs1, value a2, value ofs2,
                                value n)
 {
   value * src, * dst;
@@ -258,7 +258,7 @@ CAMLprim value caml_array_blit(value a1, value ofs1, value a2, value ofs2,
 
 /* A generic function for extraction and concatenation of sub-arrays */
 
-static value caml_array_gather(intnat num_arrays,
+static value caml_array_gather(pctx ctx, intnat num_arrays,
                                value arrays[/*num_arrays*/],
                                intnat offsets[/*num_arrays*/],
                                intnat lengths[/*num_arrays*/])
@@ -329,7 +329,7 @@ static value caml_array_gather(intnat num_arrays,
   CAMLreturn (res);
 }
 
-CAMLprim value caml_array_sub(value a, value ofs, value len)
+CAMLprim value caml_array_sub(pctx ctx, value a, value ofs, value len)
 {
   value arrays[1] = { a };
   intnat offsets[1] = { Long_val(ofs) };
@@ -337,7 +337,7 @@ CAMLprim value caml_array_sub(value a, value ofs, value len)
   return caml_array_gather(1, arrays, offsets, lengths);
 }
 
-CAMLprim value caml_array_append(value a1, value a2)
+CAMLprim value caml_array_append(pctx ctx, value a1, value a2)
 {
   value arrays[2] = { a1, a2 };
   intnat offsets[2] = { 0, 0 };
@@ -345,7 +345,7 @@ CAMLprim value caml_array_append(value a1, value a2)
   return caml_array_gather(2, arrays, offsets, lengths);
 }
 
-CAMLprim value caml_array_concat(value al)
+CAMLprim value caml_array_concat(pctx ctx, value al)
 {
 #define STATIC_SIZE 16
   value static_arrays[STATIC_SIZE], * arrays;

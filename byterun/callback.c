@@ -165,21 +165,21 @@ CAMLexport value caml_callbackN_exn(pctx ctx, value closure, int narg, value arg
 
 /* Exception-propagating variants of the above */
 
-CAMLexport value caml_callback (value closure, value arg)
+CAMLexport value caml_callback (pctx ctx, value closure, value arg)
 {
   value res = caml_callback_exn(0x0, closure, arg); // phc todo ctx
   if (Is_exception_result(res)) caml_raise(Extract_exception(res));
   return res;
 }
 
-CAMLexport value caml_callback2 (value closure, value arg1, value arg2)
+CAMLexport value caml_callback2 (pctx ctx, value closure, value arg1, value arg2)
 {
   value res = caml_callback2_exn(0x0, closure, arg1, arg2); // phc todo ctx
   if (Is_exception_result(res)) caml_raise(Extract_exception(res));
   return res;
 }
 
-CAMLexport value caml_callback3 (value closure, value arg1, value arg2,
+CAMLexport value caml_callback3 (pctx ctx, value closure, value arg1, value arg2,
                                  value arg3)
 {
   value res = caml_callback3_exn(0x0, closure, arg1, arg2, arg3); // phc todo ctx
@@ -187,7 +187,7 @@ CAMLexport value caml_callback3 (value closure, value arg1, value arg2,
   return res;
 }
 
-CAMLexport value caml_callbackN (value closure, int narg, value args[])
+CAMLexport value caml_callbackN (pctx ctx, value closure, int narg, value args[])
 {
   value res = caml_callbackN_exn(0x0, closure, narg, args); // phc todo ctx
   if (Is_exception_result(res)) caml_raise(Extract_exception(res));
@@ -215,7 +215,7 @@ static unsigned int hash_value_name(char const *name)
   return h % Named_value_size;
 }
 
-CAMLprim value caml_register_named_value(value vname, value val)
+CAMLprim value caml_register_named_value(pctx ctx, value vname, value val)
 {
   struct named_value * nv;
   char * name = String_val(vname);
@@ -237,7 +237,7 @@ CAMLprim value caml_register_named_value(value vname, value val)
   return Val_unit;
 }
 
-CAMLexport value * caml_named_value(char const *name)
+CAMLexport value * caml_named_value(pctx ctx, char const *name)
 {
   struct named_value * nv;
   for (nv = named_value_table[hash_value_name(name)];
