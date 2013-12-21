@@ -138,7 +138,7 @@ void caml_final_do_calls (void)
       -- to_do_hd->size;
       f = to_do_hd->item[to_do_hd->size];
       running_finalisation_function = 1;
-      res = caml_callback_exn (f.fun, f.val + f.offset);
+      res = caml_callback_exn (0x0, f.fun, f.val + f.offset); // phc todo ctx
       running_finalisation_function = 0;
       if (Is_exception_result (res)) caml_raise (Extract_exception (res));
     }

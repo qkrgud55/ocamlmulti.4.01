@@ -18,6 +18,7 @@
 #include "fail.h"
 #include "memory.h"
 #include "mlvalues.h"
+#include "context.h"
 
 #ifndef NATIVE_CODE
 
@@ -53,7 +54,7 @@ static void thread_callback(void)
 
 #endif
 
-CAMLexport value caml_callbackN_exn(value closure, int narg, value args[])
+CAMLexport value caml_callbackN_exn(pctx ctx, value closure, int narg, value args[])
 {
   int i;
   value res;
@@ -100,36 +101,36 @@ CAMLexport value caml_callbackN_exn(value closure, int narg, value args[])
   return res;
 }
 
-CAMLexport value caml_callback_exn(value closure, value arg1)
+CAMLexport value caml_callback_exn(pctx ctx, value closure, value arg1)
 {
   value arg[1];
   arg[0] = arg1;
-  return caml_callbackN_exn(closure, 1, arg);
+  return caml_callbackN_exn(0x0, closure, 1, arg); // phc todo ctx
 }
 
-CAMLexport value caml_callback2_exn(value closure, value arg1, value arg2)
+CAMLexport value caml_callback2_exn(pctx ctx, value closure, value arg1, value arg2)
 {
   value arg[2];
   arg[0] = arg1;
   arg[1] = arg2;
-  return caml_callbackN_exn(closure, 2, arg);
+  return caml_callbackN_exn(0x0, closure, 2, arg); // phc todo ctx
 }
 
-CAMLexport value caml_callback3_exn(value closure,
+CAMLexport value caml_callback3_exn(pctx ctx, value closure,
                                value arg1, value arg2, value arg3)
 {
   value arg[3];
   arg[0] = arg1;
   arg[1] = arg2;
   arg[2] = arg3;
-  return caml_callbackN_exn(closure, 3, arg);
+  return caml_callbackN_exn(0x0, closure, 3, arg); // phc todo ctx
 }
 
 #else
 
 /* Native-code callbacks.  caml_callback[123]_exn are implemented in asm. */
 
-CAMLexport value caml_callbackN_exn(value closure, int narg, value args[])
+CAMLexport value caml_callbackN_exn(pctx ctx, value closure, int narg, value args[])
 {
   CAMLparam1 (closure);
   CAMLxparamN (args, narg);
@@ -141,17 +142,17 @@ CAMLexport value caml_callbackN_exn(value closure, int narg, value args[])
     /* Pass as many arguments as possible */
     switch (narg - i) {
     case 1:
-      res = caml_callback_exn(res, args[i]);
+      res = caml_callback_exn(0x0, res, args[i]);  // phc todo ctx
       if (Is_exception_result(res)) CAMLreturn (res);
       i += 1;
       break;
     case 2:
-      res = caml_callback2_exn(res, args[i], args[i + 1]);
+      res = caml_callback2_exn(0x0, res, args[i], args[i + 1]); // phc todo ctx
       if (Is_exception_result(res)) CAMLreturn (res);
       i += 2;
       break;
     default:
-      res = caml_callback3_exn(res, args[i], args[i + 1], args[i + 2]);
+      res = caml_callback3_exn(0x0, res, args[i], args[i + 1], args[i + 2]); // phc todo ctx
       if (Is_exception_result(res)) CAMLreturn (res);
       i += 3;
       break;
@@ -166,14 +167,14 @@ CAMLexport value caml_callbackN_exn(value closure, int narg, value args[])
 
 CAMLexport value caml_callback (value closure, value arg)
 {
-  value res = caml_callback_exn(closure, arg);
+  value res = caml_callback_exn(0x0, closure, arg); // phc todo ctx
   if (Is_exception_result(res)) caml_raise(Extract_exception(res));
   return res;
 }
 
 CAMLexport value caml_callback2 (value closure, value arg1, value arg2)
 {
-  value res = caml_callback2_exn(closure, arg1, arg2);
+  value res = caml_callback2_exn(0x0, closure, arg1, arg2); // phc todo ctx
   if (Is_exception_result(res)) caml_raise(Extract_exception(res));
   return res;
 }
@@ -181,14 +182,14 @@ CAMLexport value caml_callback2 (value closure, value arg1, value arg2)
 CAMLexport value caml_callback3 (value closure, value arg1, value arg2,
                                  value arg3)
 {
-  value res = caml_callback3_exn(closure, arg1, arg2, arg3);
+  value res = caml_callback3_exn(0x0, closure, arg1, arg2, arg3); // phc todo ctx
   if (Is_exception_result(res)) caml_raise(Extract_exception(res));
   return res;
 }
 
 CAMLexport value caml_callbackN (value closure, int narg, value args[])
 {
-  value res = caml_callbackN_exn(closure, narg, args);
+  value res = caml_callbackN_exn(0x0, closure, narg, args); // phc todo ctx
   if (Is_exception_result(res)) caml_raise(Extract_exception(res));
   return res;
 }

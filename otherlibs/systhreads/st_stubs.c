@@ -492,7 +492,7 @@ static ST_THREAD_FUNCTION caml_thread_start(void * arg)
     /* Callback the closure */
     clos = Start_closure(th->descr);
     modify(&(Start_closure(th->descr)), Val_unit);
-    callback_exn(clos, Val_unit);
+    callback_exn(0x0, clos, Val_unit); // phc todo ctx
     caml_thread_stop();
 #ifdef NATIVE_CODE
   }

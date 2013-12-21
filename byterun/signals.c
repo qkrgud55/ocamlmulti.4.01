@@ -139,9 +139,9 @@ void caml_execute_signal(int signal_number, int in_signal_handler)
   sigaddset(&sigs, signal_number);
   sigprocmask(SIG_BLOCK, &sigs, &sigs);
 #endif
-  res = caml_callback_exn(
+  res = caml_callback_exn(0x0,
            Field(caml_signal_handlers, signal_number),
-           Val_int(caml_rev_convert_signal_number(signal_number)));
+           Val_int(caml_rev_convert_signal_number(signal_number))); // phc todo ctx
 #ifdef POSIX_SIGNALS
   if (! in_signal_handler) {
     /* Restore the original signal mask */

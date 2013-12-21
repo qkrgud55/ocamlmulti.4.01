@@ -91,6 +91,10 @@ power.o: power-$(SYSTEM).o
 power.p.o: power-$(SYSTEM).o
 	cp power-$(SYSTEM).o power.p.o
 
+context.h: ../byterun/context.h
+	ln -s ../byterun/context.h context.h
+context.c: ../byterun/context.c
+	ln -s ../byterun/context.c context.c
 main.c: ../byterun/main.c
 	ln -s ../byterun/main.c main.c
 misc.c: ../byterun/misc.c

@@ -459,7 +459,7 @@ CFI_ENDPROC
 
 /* Start the OCaml program */
 
-FUNCTION(G(caml_start_program_r))
+FUNCTION(G(caml_start_program_r)) /* phc reentrant */
         movq    %rdi, %r13
 FUNCTION(G(caml_start_program))
        CFI_STARTPROC
@@ -522,6 +522,7 @@ CFI_ENDPROC
 #define C_ARG_2 %rsi
 #define C_ARG_3 %rdx
 #define C_ARG_4 %rcx
+#define C_ARG_5 %r8
 #endif
 
 /* Raise an exception from OCaml */
@@ -601,13 +602,14 @@ FUNCTION(G(caml_stack_overflow))
 
 /* Callback from C to OCaml */
 
-FUNCTION(G(caml_callback_exn))
+FUNCTION(G(caml_callback_exn)) /* phc reentrant */
 CFI_STARTPROC
     /* Save callee-save registers */
         PUSH_CALLEE_SAVE_REGS
     /* Initial loading of arguments */
-        movq    C_ARG_1, %rbx      /* closure */
-        movq    C_ARG_2, %rax      /* argument */
+        movq    C_ARG_1, %r13      /* context ptr */
+        movq    C_ARG_2, %rbx      /* closure */
+        movq    C_ARG_3, %rax      /* argument */
         movq    0(%rbx), %r12      /* code pointer */
         jmp     LBL(caml_start_program)
 CFI_ENDPROC
@@ -617,9 +619,10 @@ CFI_STARTPROC
     /* Save callee-save registers */
         PUSH_CALLEE_SAVE_REGS
     /* Initial loading of arguments */
-        movq    C_ARG_1, %rdi      /* closure -- no op with Unix conventions */
-        movq    C_ARG_2, %rax      /* first argument */
-        movq    C_ARG_3, %rbx      /* second argument */
+        movq    C_ARG_1, %r13      /* context ptr */
+        movq    C_ARG_2, %rdi      /* closure -- no op with Unix conventions */
+        movq    C_ARG_3, %rax      /* first argument */
+        movq    C_ARG_4, %rbx      /* second argument */
         leaq    GCALL(caml_apply2)(%rip), %r12  /* code pointer */
         jmp     LBL(caml_start_program)
 CFI_ENDPROC
@@ -629,10 +632,11 @@ CFI_STARTPROC
     /* Save callee-save registers */
         PUSH_CALLEE_SAVE_REGS
     /* Initial loading of arguments */
-        movq    C_ARG_2, %rax      /* first argument */
-        movq    C_ARG_3, %rbx      /* second argument */
-        movq    C_ARG_1, %rsi      /* closure */
-        movq    C_ARG_4, %rdi      /* third argument */
+        movq    C_ARG_1, %r13      /* context ptr */
+        movq    C_ARG_2, %rsi      /* closure */
+        movq    C_ARG_3, %rax      /* first argument */
+        movq    C_ARG_4, %rbx      /* second argument */
+        movq    C_ARG_5, %rdi      /* third argument */
         leaq    GCALL(caml_apply3)(%rip), %r12  /* code pointer */
         jmp     LBL(caml_start_program)
 CFI_ENDPROC

@@ -845,6 +845,8 @@ partialclean::
 	rm -f *~
 
 depend: beforedepend
+	cd byterun; make depend
+	cd asmrun; make depend
 	(for d in utils parsing typing bytecomp asmcomp driver; \
 	 do $(CAMLDEP) $(DEPFLAGS) $$d/*.mli $$d/*.ml; \
 	 done) > .depend

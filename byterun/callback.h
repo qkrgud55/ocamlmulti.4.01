@@ -20,6 +20,7 @@
 #include "compatibility.h"
 #endif
 #include "mlvalues.h"
+#include "context.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,11 +32,11 @@ CAMLextern value caml_callback3 (value closure, value arg1, value arg2,
                                  value arg3);
 CAMLextern value caml_callbackN (value closure, int narg, value args[]);
 
-CAMLextern value caml_callback_exn (value closure, value arg);
-CAMLextern value caml_callback2_exn (value closure, value arg1, value arg2);
-CAMLextern value caml_callback3_exn (value closure,
+CAMLextern value caml_callback_exn  (pctx ctx, value closure, value arg);
+CAMLextern value caml_callback2_exn (pctx ctx, value closure, value arg1, value arg2);
+CAMLextern value caml_callback3_exn (pctx ctx, value closure,
                                      value arg1, value arg2, value arg3);
-CAMLextern value caml_callbackN_exn (value closure, int narg, value args[]);
+CAMLextern value caml_callbackN_exn (pctx ctx, value closure, int narg, value args[]);
 
 #define Make_exception_result(v) ((v) | 2)
 #define Is_exception_result(v) (((v) & 3) == 2)
