@@ -20,8 +20,8 @@
 #include "mlvalues.h"
 
 /* Structural comparison on trees. */
-
-struct compare_item { value * v1, * v2; mlsize_t count; };
+// phc : moved to context
+// struct compare_item { value * v1, * v2; mlsize_t count; };
 
 #define COMPARE_STACK_INIT_SIZE 256
 #define COMPARE_STACK_MAX_SIZE (1024*1024)

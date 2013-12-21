@@ -18,6 +18,7 @@
 
 #include <string.h>
 
+#include "context.h"
 #include "config.h"
 #include "freelist.h"
 #include "gc.h"
@@ -32,9 +33,10 @@
    (See [caml_fl_merge_block].)
 */
 
-typedef struct {
-  char *next_bp;   /* Pointer to the first byte of the next block. */
-} block;
+// phc : moved to context
+// typedef struct {
+//   char *next_bp;   /* Pointer to the first byte of the next block. */
+// } block;
 
 /* The sentinel can be located anywhere in memory, but it must not be
    adjacent to any heap object. */

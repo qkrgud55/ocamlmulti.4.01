@@ -40,10 +40,13 @@ CAMLexport value caml_alloc_custom(struct custom_operations * ops,
   return result;
 }
 
+// phc : moved to context
+/*
 struct custom_operations_list {
   struct custom_operations * ops;
   struct custom_operations_list * next;
-};
+}; 
+*/
 
 static struct custom_operations_list * custom_ops_table = NULL;
 

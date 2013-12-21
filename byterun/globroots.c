@@ -23,18 +23,19 @@
    (see William Pugh, "Skip lists: a probabilistic alternative to
    balanced binary trees", Comm. ACM 33(6), 1990). */
 
-struct global_root {
-  value * root;                    /* the address of the root */
-  struct global_root * forward[1]; /* variable-length array */
-};
-
-#define NUM_LEVELS 17
-
-struct global_root_list {
-  value * root;                 /* dummy value for layout compatibility */
-  struct global_root * forward[NUM_LEVELS]; /* forward chaining */
-  int level;                    /* max used level */
-};
+// phc : moved to context
+// struct global_root {
+//   value * root;                    /* the address of the root */
+//   struct global_root * forward[1]; /* variable-length array */
+// };
+// 
+// #define NUM_LEVELS 17
+// 
+// struct global_root_list {
+//   value * root;                 /* dummy value for layout compatibility */
+//   struct global_root * forward[NUM_LEVELS]; /* forward chaining */
+//   int level;                    /* max used level */
+// };
 
 /* Generate a random level for a new node: 0 with probability 3/4,
    1 with probability 3/16, 2 with probability 3/64, etc.

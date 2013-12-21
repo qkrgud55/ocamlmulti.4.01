@@ -195,12 +195,14 @@ CAMLexport value caml_callbackN (value closure, int narg, value args[])
 }
 
 /* Naming of OCaml values */
-
+// phc : moved to context
+/*
 struct named_value {
   value val;
   struct named_value * next;
   char name[1];
 };
+*/
 
 #define Named_value_size 13
 

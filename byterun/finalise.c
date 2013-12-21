@@ -18,12 +18,16 @@
 #include "mlvalues.h"
 #include "roots.h"
 #include "signals.h"
+#include "context.h"
 
+// phc : moved to context
+/*
 struct final {
   value fun;
   value val;
   int offset;
 };
+*/
 
 static struct final *final_table = NULL;
 static uintnat old = 0, young = 0, size = 0;
@@ -32,11 +36,11 @@ static uintnat old = 0, young = 0, size = 0;
    [young..size) : free space
 */
 
-struct to_do {
-  struct to_do *next;
-  int size;
-  struct final item[1];  /* variable size */
-};
+// struct to_do {
+//   struct to_do *next;
+//   int size;
+//   struct final item[1];  /* variable size */
+// };
 
 static struct to_do *to_do_hd = NULL;
 static struct to_do *to_do_tl = NULL;
