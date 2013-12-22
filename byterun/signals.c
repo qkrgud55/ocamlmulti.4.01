@@ -67,7 +67,7 @@ void caml_record_signal(pctx ctx, int signal_number)
 #ifndef NATIVE_CODE
   caml_something_to_do = 1;
 #else
-  caml_young_limit = caml_young_end;
+  ctx->caml_young_limit = ctx->caml_young_end;
 #endif
 }
 
@@ -161,11 +161,11 @@ int volatile caml_force_major_slice = 0;
 
 void caml_urge_major_slice (pctx ctx)
 {
-  caml_force_major_slice = 1;
+  ctx->caml_force_major_slice = 1;
 #ifndef NATIVE_CODE
   caml_something_to_do = 1;
 #else
-  caml_young_limit = caml_young_end;
+  ctx->caml_young_limit = ctx->caml_young_end;
   /* This is only moderately effective on ports that cache [caml_young_limit]
      in a register, since [caml_modify] is called directly, not through
      [caml_c_call], so it may take a while before the register is reloaded

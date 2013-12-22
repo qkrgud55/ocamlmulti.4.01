@@ -53,7 +53,7 @@ static int random_level(pctx ctx)
 
   /* Linear congruence with modulus = 2^32, multiplier = 69069
      (Knuth vol 2 p. 106, line 15 of table 1), additive = 25173. */
-  r = random_seed = random_seed * 69069 + 25173;
+  r = ctx->random_seed = ctx->random_seed * 69069 + 25173;
   /* Knuth (vol 2 p. 13) shows that the least significant bits are
      "less random" than the most significant bits with a modulus of 2^m,
      so consume most significant bits first */
@@ -179,14 +179,14 @@ struct global_root_list caml_global_roots_old = { NULL, { NULL, }, 0 };
 CAMLexport void caml_register_global_root(pctx ctx, value *r)
 {
   Assert (((intnat) r & 3) == 0);  /* compact.c demands this (for now) */
-  caml_insert_global_root(&caml_global_roots, r);
+  caml_insert_global_root(&ctx->caml_global_roots, r);
 }
 
 /* Un-register a global C root of the mutable kind */
 
 CAMLexport void caml_remove_global_root(pctx ctx, value *r)
 {
-  caml_delete_global_root(&caml_global_roots, r);
+  caml_delete_global_root(&ctx->caml_global_roots, r);
 }
 
 /* Register a global C root of the generational kind */
@@ -197,9 +197,9 @@ CAMLexport void caml_register_generational_global_root(pctx ctx, value *r)
   Assert (((intnat) r & 3) == 0);  /* compact.c demands this (for now) */
   if (Is_block(v)) {
     if (Is_young(v))
-      caml_insert_global_root(&caml_global_roots_young, r);
+      caml_insert_global_root(&ctx->caml_global_roots_young, r);
     else if (Is_in_heap(v))
-      caml_insert_global_root(&caml_global_roots_old, r);
+      caml_insert_global_root(&ctx->caml_global_roots_old, r);
   }
 }
 
@@ -210,9 +210,9 @@ CAMLexport void caml_remove_generational_global_root(pctx ctx, value *r)
   value v = *r;
   if (Is_block(v)) {
     if (Is_young(v))
-      caml_delete_global_root(&caml_global_roots_young, r);
+      caml_delete_global_root(&ctx->caml_global_roots_young, r);
     else if (Is_in_heap(v))
-      caml_delete_global_root(&caml_global_roots_old, r);
+      caml_delete_global_root(&ctx->caml_global_roots_old, r);
   }
 }
 
@@ -228,8 +228,8 @@ CAMLexport void caml_modify_generational_global_root(pctx ctx, value *r, value n
      points to the young generation. */
   if (Is_block(newval) && Is_young(newval) &&
       Is_block(oldval) && Is_in_heap(oldval)) {
-    caml_delete_global_root(&caml_global_roots_old, r);
-    caml_insert_global_root(&caml_global_roots_young, r);
+    caml_delete_global_root(&ctx->caml_global_roots_old, r);
+    caml_insert_global_root(&ctx->caml_global_roots_young, r);
   }
   /* PR#4704 */
   else if (!Is_block(oldval) && Is_block(newval)) {
@@ -238,9 +238,9 @@ CAMLexport void caml_modify_generational_global_root(pctx ctx, value *r, value n
        of the operation of [caml_register_generational_global_root]), so we
        need to make sure it gets in, or else it will never be scanned. */
     if (Is_young(newval))
-      caml_insert_global_root(&caml_global_roots_young, r);
+      caml_insert_global_root(&ctx->caml_global_roots_young, r);
     else if (Is_in_heap(newval))
-      caml_insert_global_root(&caml_global_roots_old, r);
+      caml_insert_global_root(&ctx->caml_global_roots_old, r);
   }
   else if (Is_block(oldval) && !Is_block(newval)) {
     /* The previous value in the root was boxed but now it is unboxed, so
@@ -248,9 +248,9 @@ CAMLexport void caml_modify_generational_global_root(pctx ctx, value *r, value n
        anyway at the next minor collection, but it is safer to delete it
        here. */
     if (Is_young(oldval))
-      caml_delete_global_root(&caml_global_roots_young, r);
+      caml_delete_global_root(&ctx->caml_global_roots_young, r);
     else if (Is_in_heap(oldval))
-      caml_delete_global_root(&caml_global_roots_old, r);
+      caml_delete_global_root(&ctx->caml_global_roots_old, r);
   }
   /* end PR#4704 */
   *r = newval;
@@ -260,9 +260,9 @@ CAMLexport void caml_modify_generational_global_root(pctx ctx, value *r, value n
 
 void caml_scan_global_roots(pctx ctx, scanning_action f)
 {
-  caml_iterate_global_roots(f, &caml_global_roots);
-  caml_iterate_global_roots(f, &caml_global_roots_young);
-  caml_iterate_global_roots(f, &caml_global_roots_old);
+  caml_iterate_global_roots(f, &ctx->caml_global_roots);
+  caml_iterate_global_roots(f, &ctx->caml_global_roots_young);
+  caml_iterate_global_roots(f, &ctx->caml_global_roots_old);
 }
 
 /* Scan global roots for a minor collection */
@@ -271,12 +271,12 @@ void caml_scan_global_young_roots(pctx ctx, scanning_action f)
 {
   struct global_root * gr;
 
-  caml_iterate_global_roots(f, &caml_global_roots);
-  caml_iterate_global_roots(f, &caml_global_roots_young);
+  caml_iterate_global_roots(f, &ctx->caml_global_roots);
+  caml_iterate_global_roots(f, &ctx->caml_global_roots_young);
   /* Move young roots to old roots */
-  for (gr = caml_global_roots_young.forward[0];
+  for (gr = ctx->caml_global_roots_young.forward[0];
        gr != NULL; gr = gr->forward[0]) {
-    caml_insert_global_root(&caml_global_roots_old, gr->root);
+    caml_insert_global_root(&ctx->caml_global_roots_old, gr->root);
   }
-  caml_empty_global_roots(&caml_global_roots_young);
+  caml_empty_global_roots(&ctx->caml_global_roots_young);
 }

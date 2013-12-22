@@ -31,6 +31,9 @@ typeset = set()
 funset = set()
 varset = set()
 
+skip_num = 0
+no_count = 0
+
 def parse_reentrant_def():
   f = open("/home/phc/ocaml_internal/ocamlmulti/reentrant_def", "r")
   data = f.read()
@@ -84,20 +87,23 @@ def parse_reentrant_var():
   while True:
     line = f.readline()
     if not line: break
+
     m = re.match(r'^([^:]*):.*$', line)
     if not m: print line
     filepath = m.groups()[0]
-    m = re.search(r'ctx->(([a-zA-Z0-9_])+)[^a-zA-Z0-9_]', line)
-    if not m: print line
-    var = m.groups()[0]
-#    print filepath, 'ctx->', var
-    varset.add(var)
-    
-    count += 1
+    for m in re.findall(r'ctx->(([a-zA-Z0-9_])+)[^a-zA-Z0-9_]', line):
+      var = m[0]
+      print filepath, 'ctx->', var
+      varset.add((filepath.split('/')[-1],var))
+      count += 1
+      
   print "# of member vars of context :", count
+
+  # manual
+  varset.difference_update(set([('md5.c','buf'), ('md5.c','in')]))
   print varset
 
-parse_reentrant_def1()
+#parse_reentrant_def1()
 parse_reentrant_var()
 
 def handle_line_fun(filepath, lines, idx, line):
@@ -157,8 +163,62 @@ def handle_line_fun(filepath, lines, idx, line):
     fp.close()
 
 def handle_line_var(filepath, lines, idx, line):
-  pass
-  
+  global no_count, skip_num
+
+  it = 0
+  while True:
+    m = re.search(r'[a-zA-Z0-9_]+', line[it:])
+    if not m: break
+    symbol = m.group()
+    if (filepath.split('/')[-1],symbol) not in varset:
+      it += m.regs[0][1]
+      continue
+    offset = it+m.regs[0][0]
+    if offset >= len('ctx->') and re.match(r'.*ctx->$', line[:offset]):
+      it += m.regs[0][1]
+      continue
+
+    print '\n'*3
+    print filepath
+    print '-'*50
+    
+    start = idx - 15
+    if start < 0: start = 0
+    end = idx + 15
+    if end > len(lines):
+      end = len(lines)
+    for it1 in range(start,end):
+      print '%4d :' % (it1), lines[it1]
+      if it1==idx:
+        print 'found:', ' '*(it+m.regs[0][0]) + '='*len(symbol)
+
+    result_line = line[:offset] + "ctx->" + line[offset:]
+    print '\n'*3
+    print 'result','-'*30
+    print result_line
+
+    if no_count < skip_num:
+      no_count += 1
+      it += m.regs[0][1]
+    else:
+      print '(yes/no/quit)? :',
+      key = getch()
+      if key=='q':
+        fp = file('no_count','w')
+        fp.write(str(no_count))
+        fp.close()
+        return exit()
+      elif key=='y':
+        lines[idx] = result_line
+        fp = file(filepath, 'w')
+        fp.write('\n'.join(lines))
+        fp.close()
+        it += m.regs[0][1]+len('ctx->')
+        line = result_line
+      else:
+        no_count += 1
+        it += m.regs[0][1]
+
 def traverse_fun(root, dirs, files):
   print root
   for file_name in files:
@@ -172,7 +232,7 @@ def traverse_fun(root, dirs, files):
     count = 0
     offset = 0
     while count < len(lines):
-      handle_line_fun(filepath,lines,count,lines[count])
+      handle_line_var(filepath,lines,count,lines[count])
       count += 1
 
 def traverse():
@@ -181,5 +241,8 @@ def traverse():
     traverse_fun(root,dirs,files)
   for root, dirs, files in os.walk(basedir + "/asmrun"):
     traverse_fun(root,dirs,files)
+
+fp = file('no_count', 'r')
+skip_num = int(fp.read())
 
 traverse()

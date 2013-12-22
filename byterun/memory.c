@@ -264,7 +264,7 @@ int caml_add_to_heap (pctx ctx, char *m)
 #endif /* debug */
 
   caml_gc_message (0x04, "Growing heap to %luk bytes\n",
-                   (caml_stat_heap_size + Chunk_size (m)) / 1024);
+                   (ctx->caml_stat_heap_size + Chunk_size (m)) / 1024);
 
   /* Register block in page table */
   if (caml_page_table_add(In_heap, m, m + Chunk_size(m)) != 0)
@@ -272,7 +272,7 @@ int caml_add_to_heap (pctx ctx, char *m)
 
   /* Chain this heap chunk. */
   {
-    char **last = &caml_heap_start;
+    char **last = &ctx->caml_heap_start;
     char *cur = *last;
 
     while (cur != NULL && cur < m){
@@ -282,12 +282,12 @@ int caml_add_to_heap (pctx ctx, char *m)
     Chunk_next (m) = cur;
     *last = m;
 
-    ++ caml_stat_heap_chunks;
+    ++ ctx->caml_stat_heap_chunks;
   }
 
-  caml_stat_heap_size += Chunk_size (m);
-  if (caml_stat_heap_size > caml_stat_top_heap_size){
-    caml_stat_top_heap_size = caml_stat_heap_size;
+  ctx->caml_stat_heap_size += Chunk_size (m);
+  if (ctx->caml_stat_heap_size > ctx->caml_stat_top_heap_size){
+    ctx->caml_stat_top_heap_size = ctx->caml_stat_heap_size;
   }
   return 0;
 }
@@ -307,7 +307,7 @@ static char *expand_heap (pctx ctx, mlsize_t request)
   asize_t over_request, malloc_request, remain;
 
   Assert (request <= Max_wosize);
-  over_request = request + request / 100 * caml_percent_free;
+  over_request = request + request / 100 * ctx->caml_percent_free;
   malloc_request = caml_round_heap_chunk_size (Bhsize_wosize (over_request));
   mem = caml_alloc_for_heap (malloc_request);
   if (mem == NULL){
@@ -359,11 +359,11 @@ void caml_shrink_heap (pctx ctx, char *chunk)
      It will never happen anyway, because of the way compaction works.
      (see compact.c)
   */
-  if (chunk == caml_heap_start) return;
+  if (chunk == ctx->caml_heap_start) return;
 
-  caml_stat_heap_size -= Chunk_size (chunk);
+  ctx->caml_stat_heap_size -= Chunk_size (chunk);
   caml_gc_message (0x04, "Shrinking heap to %luk bytes\n",
-                   (unsigned long) caml_stat_heap_size / 1024);
+                   (unsigned long) ctx->caml_stat_heap_size / 1024);
 
 #ifdef DEBUG
   {
@@ -374,10 +374,10 @@ void caml_shrink_heap (pctx ctx, char *chunk)
   }
 #endif
 
-  -- caml_stat_heap_chunks;
+  -- ctx->caml_stat_heap_chunks;
 
   /* Remove [chunk] from the list of chunks. */
-  cp = &caml_heap_start;
+  cp = &ctx->caml_heap_start;
   while (*cp != chunk) cp = &(Chunk_next (*cp));
   *cp = Chunk_next (chunk);
 
@@ -390,13 +390,13 @@ void caml_shrink_heap (pctx ctx, char *chunk)
 
 color_t caml_allocation_color (pctx ctx)
 {
-  if (caml_gc_phase == Phase_mark
-      || (caml_gc_phase == Phase_sweep && (addr)hp >= (addr)caml_gc_sweep_hp)){
+  if (ctx->caml_gc_phase == Phase_mark
+      || (ctx->caml_gc_phase == Phase_sweep && (addr)hp >= (addr)ctx->caml_gc_sweep_hp)){
     return Caml_black;
   }else{
-    Assert (caml_gc_phase == Phase_idle
-            || (caml_gc_phase == Phase_sweep
-                && (addr)hp < (addr)caml_gc_sweep_hp));
+    Assert (ctx->caml_gc_phase == Phase_idle
+            || (ctx->caml_gc_phase == Phase_sweep
+                && (addr)hp < (addr)ctx->caml_gc_sweep_hp));
     return Caml_white;
   }
 }
@@ -410,7 +410,7 @@ CAMLexport value caml_alloc_shr (pctx ctx, mlsize_t wosize, tag_t tag)
   if (hp == NULL){
     new_block = expand_heap (wosize);
     if (new_block == NULL) {
-      if (caml_in_minor_collection)
+      if (ctx->caml_in_minor_collection)
         caml_fatal_error ("Fatal error: out of memory.\n");
       else
         caml_raise_out_of_memory ();
@@ -422,18 +422,18 @@ CAMLexport value caml_alloc_shr (pctx ctx, mlsize_t wosize, tag_t tag)
   Assert (Is_in_heap (Val_hp (hp)));
 
   /* Inline expansion of caml_allocation_color. */
-  if (caml_gc_phase == Phase_mark
-      || (caml_gc_phase == Phase_sweep && (addr)hp >= (addr)caml_gc_sweep_hp)){
+  if (ctx->caml_gc_phase == Phase_mark
+      || (ctx->caml_gc_phase == Phase_sweep && (addr)hp >= (addr)ctx->caml_gc_sweep_hp)){
     Hd_hp (hp) = Make_header (wosize, tag, Caml_black);
   }else{
-    Assert (caml_gc_phase == Phase_idle
-            || (caml_gc_phase == Phase_sweep
-                && (addr)hp < (addr)caml_gc_sweep_hp));
+    Assert (ctx->caml_gc_phase == Phase_idle
+            || (ctx->caml_gc_phase == Phase_sweep
+                && (addr)hp < (addr)ctx->caml_gc_sweep_hp));
     Hd_hp (hp) = Make_header (wosize, tag, Caml_white);
   }
   Assert (Hd_hp (hp) == Make_header (wosize, tag, caml_allocation_color (hp)));
-  caml_allocated_words += Whsize_wosize (wosize);
-  if (caml_allocated_words > Wsize_bsize (caml_minor_heap_size)){
+  ctx->caml_allocated_words += Whsize_wosize (wosize);
+  if (ctx->caml_allocated_words > Wsize_bsize (ctx->caml_minor_heap_size)){
     caml_urge_major_slice ();
   }
 #ifdef DEBUG
@@ -483,14 +483,14 @@ CAMLexport void caml_adjust_gc_speed (pctx ctx, mlsize_t res, mlsize_t max)
 {
   if (max == 0) max = 1;
   if (res > max) res = max;
-  caml_extra_heap_resources += (double) res / (double) max;
-  if (caml_extra_heap_resources > 1.0){
-    caml_extra_heap_resources = 1.0;
+  ctx->caml_extra_heap_resources += (double) res / (double) max;
+  if (ctx->caml_extra_heap_resources > 1.0){
+    ctx->caml_extra_heap_resources = 1.0;
     caml_urge_major_slice ();
   }
-  if (caml_extra_heap_resources
-           > (double) Wsize_bsize (caml_minor_heap_size) / 2.0
-             / (double) Wsize_bsize (caml_stat_heap_size)) {
+  if (ctx->caml_extra_heap_resources
+           > (double) Wsize_bsize (ctx->caml_minor_heap_size) / 2.0
+             / (double) Wsize_bsize (ctx->caml_stat_heap_size)) {
     caml_urge_major_slice ();
   }
 }
@@ -508,10 +508,10 @@ CAMLexport CAMLweakdef void caml_initialize (value *fp, value val)
   CAMLassert(Is_in_heap(fp));
   *fp = val;
   if (Is_block (val) && Is_young (val)) {
-    if (caml_ref_table.ptr >= caml_ref_table.limit){
-      caml_realloc_ref_table (&caml_ref_table);
+    if (ctx->caml_ref_table.ptr >= ctx->caml_ref_table.limit){
+      caml_realloc_ref_table (&ctx->caml_ref_table);
     }
-    *caml_ref_table.ptr++ = fp;
+    *ctx->caml_ref_table.ptr++ = fp;
   }
 }
 
@@ -555,16 +555,16 @@ CAMLexport CAMLweakdef void caml_modify (value *fp, value val)
       if (Is_young(old)) return;
       /* Here, [old] can be a pointer within the major heap.
          Check for condition 2. */
-      if (caml_gc_phase == Phase_mark) caml_darken(old, NULL);
+      if (ctx->caml_gc_phase == Phase_mark) caml_darken(old, NULL);
     }
     /* Check for condition 1. */
     if (Is_block(val) && Is_young(val)) {
       /* Add [fp] to remembered set */
-      if (caml_ref_table.ptr >= caml_ref_table.limit){
-        CAMLassert (caml_ref_table.ptr == caml_ref_table.limit);
-        caml_realloc_ref_table (&caml_ref_table);
+      if (ctx->caml_ref_table.ptr >= ctx->caml_ref_table.limit){
+        CAMLassert (ctx->caml_ref_table.ptr == ctx->caml_ref_table.limit);
+        caml_realloc_ref_table (&ctx->caml_ref_table);
       }
-      *caml_ref_table.ptr++ = fp;
+      *ctx->caml_ref_table.ptr++ = fp;
     }
   }
 }

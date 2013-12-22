@@ -37,9 +37,9 @@ struct caml_ref_table {
 */
 CAMLextern struct caml_ref_table caml_ref_table, caml_weak_ref_table;
 
-#define Is_young(val) \
+#define Is_young(ctx, val) \
   (Assert (Is_block (val)), \
-   (addr)(val) < (addr)caml_young_end && (addr)(val) > (addr)caml_young_start)
+   (addr)(val) < (addr)ctx->caml_young_end && (addr)(val) > (addr)ctx->caml_young_start)
 
 extern void caml_set_minor_heap_size (pctx ctx, asize_t); /* size in bytes */
 extern void caml_empty_minor_heap (pctx ctx);

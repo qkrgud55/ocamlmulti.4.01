@@ -102,18 +102,18 @@ void caml_fatal_uncaught_exception(pctx ctx, value exn)
   msg = caml_format_exception(exn);
   /* Perform "at_exit" processing, ignoring all exceptions that may
      be triggered by this */
-  saved_backtrace_active = caml_backtrace_active;
-  saved_backtrace_pos = caml_backtrace_pos;
-  caml_backtrace_active = 0;
+  saved_backtrace_active = ctx->caml_backtrace_active;
+  saved_backtrace_pos = ctx->caml_backtrace_pos;
+  ctx->caml_backtrace_active = 0;
   at_exit = caml_named_value("Pervasives.do_at_exit");
   if (at_exit != NULL) caml_callback_exn(0x0, *at_exit, Val_unit); // phc todo ctx
-  caml_backtrace_active = saved_backtrace_active;
-  caml_backtrace_pos = saved_backtrace_pos;
+  ctx->caml_backtrace_active = saved_backtrace_active;
+  ctx->caml_backtrace_pos = saved_backtrace_pos;
   /* Display the uncaught exception */
   fprintf(stderr, "Fatal error: exception %s\n", msg);
   free(msg);
   /* Display the backtrace if available */
-  if (caml_backtrace_active
+  if (ctx->caml_backtrace_active
 #ifndef NATIVE_CODE
       && !caml_debugger_in_use
 #endif
