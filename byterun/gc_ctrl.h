@@ -15,6 +15,7 @@
 #define CAML_GC_CTRL_H
 
 #include "misc.h"
+#include "context.h"
 
 extern double
      caml_stat_minor_words,

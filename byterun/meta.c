@@ -27,6 +27,7 @@
 #include "mlvalues.h"
 #include "prims.h"
 #include "stacks.h"
+#include "context.h"
 
 #ifndef NATIVE_CODE
 

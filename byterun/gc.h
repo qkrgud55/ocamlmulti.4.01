@@ -16,6 +16,7 @@
 
 
 #include "mlvalues.h"
+#include "context.h"
 
 #define Caml_white (0 << 8)
 #define Caml_gray  (1 << 8)

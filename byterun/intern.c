@@ -27,6 +27,7 @@
 #include "md5.h"
 #include "memory.h"
 #include "mlvalues.h"
+#include "context.h"
 #include "misc.h"
 #include "reverse.h"
 

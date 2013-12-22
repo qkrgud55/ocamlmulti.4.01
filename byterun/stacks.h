@@ -19,6 +19,7 @@
 
 #include "misc.h"
 #include "mlvalues.h"
+#include "context.h"
 #include "memory.h"
 
 CAMLextern value * caml_stack_low;

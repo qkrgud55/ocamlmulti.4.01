@@ -27,6 +27,7 @@
 /* </private> */
 #include "misc.h"
 #include "mlvalues.h"
+#include "context.h"
 
 #ifdef __cplusplus
 extern "C" {

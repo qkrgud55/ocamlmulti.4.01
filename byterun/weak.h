@@ -17,6 +17,7 @@
 #define CAML_WEAK_H
 
 #include "mlvalues.h"
+#include "context.h"
 
 extern value caml_weak_list_head;
 extern value caml_weak_none;

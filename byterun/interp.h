@@ -18,6 +18,7 @@
 
 #include "misc.h"
 #include "mlvalues.h"
+#include "context.h"
 
 /* interpret a bytecode */
 value caml_interprete (code_t prog, asize_t prog_size);

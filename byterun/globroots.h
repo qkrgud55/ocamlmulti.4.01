@@ -18,6 +18,7 @@
 
 #include "mlvalues.h"
 #include "roots.h"
+#include "context.h"
 
 void caml_scan_global_roots(pctx ctx, scanning_action f);
 void caml_scan_global_young_roots(pctx ctx, scanning_action f);

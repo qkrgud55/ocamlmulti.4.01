@@ -22,6 +22,7 @@
 #ifdef HAS_LOCALE
 #include <locale.h>
 #endif
+#include "context.h"
 
 CAMLexport mlsize_t caml_string_length(value s)
 {

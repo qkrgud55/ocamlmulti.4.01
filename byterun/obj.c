@@ -24,6 +24,7 @@
 #include "misc.h"
 #include "mlvalues.h"
 #include "prims.h"
+#include "context.h"
 
 CAMLprim value caml_static_alloc(value size)
 {

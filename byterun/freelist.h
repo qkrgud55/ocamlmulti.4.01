@@ -19,6 +19,7 @@
 
 #include "misc.h"
 #include "mlvalues.h"
+#include "context.h"
 
 extern asize_t caml_fl_cur_size;     /* size in words */
 

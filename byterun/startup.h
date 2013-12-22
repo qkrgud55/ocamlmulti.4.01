@@ -15,6 +15,7 @@
 #define CAML_STARTUP_H
 
 #include "mlvalues.h"
+#include "context.h"
 #include "exec.h"
 
 CAMLextern void caml_main(char **argv);

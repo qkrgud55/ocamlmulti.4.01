@@ -21,6 +21,7 @@
 #endif
 #include "misc.h"
 #include "mlvalues.h"
+#include "context.h"
 
 /* <private> */
 #include "io.h"
