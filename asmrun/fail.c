@@ -50,21 +50,21 @@ extern caml_generated_constant
 
 extern void caml_raise_exception (pctx ctx, value bucket) Noreturn;
 
-char * caml_exception_pointer = NULL;
+char * ctx->caml_exception_pointer = NULL;
 
 void caml_raise(pctx ctx, value v)
 {
   Unlock_exn();
-  if (caml_exception_pointer == NULL) caml_fatal_uncaught_exception(v);
+  if (ctx->caml_exception_pointer == NULL) caml_fatal_uncaught_exception(v);
 
 #ifndef Stack_grows_upwards
 #define PUSHED_AFTER <
 #else
 #define PUSHED_AFTER >
 #endif
-  while (caml_local_roots != NULL &&
-         (char *) caml_local_roots PUSHED_AFTER caml_exception_pointer) {
-    caml_local_roots = caml_local_roots->next;
+  while (ctx->caml_local_roots != NULL &&
+         (char *) ctx->caml_local_roots PUSHED_AFTER ctx->caml_exception_pointer) {
+    ctx->caml_local_roots = ctx->caml_local_roots->next;
   }
 #undef PUSHED_AFTER
 
@@ -189,21 +189,21 @@ static int array_bound_error_bucket_inited = 0;
 
 void caml_array_bound_error(pctx ctx)
 {
-  if (! array_bound_error_bucket_inited) {
+  if (! ctx->array_bound_error_bucket_inited) {
     mlsize_t wosize = (BOUND_MSG_LEN + sizeof(value)) / sizeof(value);
     mlsize_t offset_index = Bsize_wsize(wosize) - 1;
-    array_bound_error_msg.hdr = Make_header(wosize, String_tag, Caml_white);
-    array_bound_error_msg.data[offset_index] = offset_index - BOUND_MSG_LEN;
-    array_bound_error_bucket.hdr = Make_header(2, 0, Caml_white);
-    array_bound_error_bucket.exn = (value) caml_exn_Invalid_argument;
-    array_bound_error_bucket.arg = (value) array_bound_error_msg.data;
-    array_bound_error_bucket_inited = 1;
+    ctx->array_bound_error_msg.hdr = Make_header(wosize, String_tag, Caml_white);
+    ctx->array_bound_error_msg.data[offset_index] = offset_index - BOUND_MSG_LEN;
+    ctx->array_bound_error_bucket.hdr = Make_header(2, 0, Caml_white);
+    ctx->array_bound_error_bucket.exn = (value) caml_exn_Invalid_argument;
+    ctx->array_bound_error_bucket.arg = (value) ctx->array_bound_error_msg.data;
+    ctx->array_bound_error_bucket_inited = 1;
     caml_page_table_add(In_static_data,
-                        &array_bound_error_msg,
-                        &array_bound_error_msg + 1);
-    array_bound_error_bucket_inited = 1;
+                        &ctx->array_bound_error_msg,
+                        &ctx->array_bound_error_msg + 1);
+    ctx->array_bound_error_bucket_inited = 1;
   }
-  caml_raise((value) &array_bound_error_bucket.exn);
+  caml_raise((value) &ctx->array_bound_error_bucket.exn);
 }
 
 int caml_is_special_exception(value exn) {

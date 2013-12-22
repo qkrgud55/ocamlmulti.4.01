@@ -65,8 +65,8 @@ extern char caml_system__code_begin, caml_system__code_end;
 
 void caml_garbage_collection(pctx ctx)
 {
-  caml_young_limit = caml_young_start;
-  if (caml_young_ptr < caml_young_start || caml_force_major_slice) {
+  ctx->caml_young_limit = ctx->caml_young_start;
+  if (ctx->caml_young_ptr < ctx->caml_young_start || ctx->caml_force_major_slice) {
     caml_minor_collection();
   }
   caml_process_pending_signals();
@@ -86,12 +86,12 @@ DECLARE_SIGNAL_HANDLER(handle_signal)
     caml_enter_blocking_section_hook();
   } else {
     caml_record_signal(sig);
-  /* Some ports cache [caml_young_limit] in a register.
+  /* Some ports cache [ctx->caml_young_limit] in a register.
      Use the signal context to modify that register too, but only if
      we are inside OCaml code (not inside C code). */
 #if defined(CONTEXT_PC) && defined(CONTEXT_YOUNG_LIMIT)
     if (Is_in_code_area(CONTEXT_PC))
-      CONTEXT_YOUNG_LIMIT = (context_reg) caml_young_limit;
+      CONTEXT_YOUNG_LIMIT = (context_reg) ctx->caml_young_limit;
 #endif
   }
   errno = saved_errno;
@@ -165,7 +165,7 @@ DECLARE_SIGNAL_HANDLER(trap_handler)
   }
 #endif
   caml_exception_pointer = (char *) CONTEXT_EXCEPTION_POINTER;
-  caml_young_ptr = (char *) CONTEXT_YOUNG_PTR;
+  ctx->caml_young_ptr = (char *) CONTEXT_YOUNG_PTR;
 #if defined(SYS_rhapsody)
   caml_bottom_of_stack = (char *) CONTEXT_SP;
   caml_last_return_address = (uintnat) CONTEXT_PC;
@@ -226,7 +226,7 @@ DECLARE_SIGNAL_HANDLER(segv_handler)
     /* Raise a Stack_overflow exception straight from this signal handler */
 #if defined(CONTEXT_YOUNG_PTR) && defined(CONTEXT_EXCEPTION_POINTER)
     caml_exception_pointer = (char *) CONTEXT_EXCEPTION_POINTER;
-    caml_young_ptr = (char *) CONTEXT_YOUNG_PTR;
+    ctx->caml_young_ptr = (char *) CONTEXT_YOUNG_PTR;
 #endif
     caml_raise_stack_overflow();
 #endif

@@ -11,6 +11,10 @@
 /*                                                                     */
 /***********************************************************************/
 
+
+// phc : 4.01.0 major change in this file
+// refactoring, new functions introduced, but this file provides the same functionalities.
+
 /* Stack backtrace for uncaught exceptions */
 
 #include <stdio.h>
@@ -36,13 +40,13 @@ CAMLprim value caml_record_backtrace(pctx ctx, value vflag)
 {
   int flag = Int_val(vflag);
 
-  if (flag != caml_backtrace_active) {
-    caml_backtrace_active = flag;
-    caml_backtrace_pos = 0;
+  if (flag != ctx->caml_backtrace_active) {
+    ctx->caml_backtrace_active = flag;
+    ctx->caml_backtrace_pos = 0;
     if (flag) {
-      caml_register_global_root(&caml_backtrace_last_exn);
+      caml_register_global_root(&ctx->caml_backtrace_last_exn);
     } else {
-      caml_remove_global_root(&caml_backtrace_last_exn);
+      caml_remove_global_root(&ctx->caml_backtrace_last_exn);
     }
   }
   return Val_unit;
@@ -52,26 +56,26 @@ CAMLprim value caml_record_backtrace(pctx ctx, value vflag)
 
 CAMLprim value caml_backtrace_status(pctx ctx, value vunit)
 {
-  return Val_bool(caml_backtrace_active);
+  return Val_bool(ctx->caml_backtrace_active);
 }
 
 /* returns the next frame descriptor (or NULL if none is available),
    and updates *pc and *sp to point to the following one.  */
 
-frame_descr * caml_next_frame_descriptor(uintnat * pc, char ** sp)
+frame_descr * caml_next_frame_descriptor(pctx ctx, uintnat * pc, char ** sp)
 {
   frame_descr * d;
   uintnat h;
 
-  if (caml_frame_descriptors == NULL) caml_init_frame_descriptors();
+  if (ctx->caml_frame_descriptors == NULL) caml_init_frame_descriptors();
 
   while (1) {
     h = Hash_retaddr(*pc);
     while (1) {
-      d = caml_frame_descriptors[h];
+      d = ctx->caml_frame_descriptors[h];
       if (d == 0) return NULL; /* can happen if some code compiled without -g */
       if (d->retaddr == *pc) break;
-      h = (h+1) & caml_frame_descriptors_mask;
+      h = (h+1) & ctx->caml_frame_descriptors_mask;
     }
     /* Skip to next frame */
     if (d->frame_size != 0xFFFF) {
@@ -107,13 +111,13 @@ frame_descr * caml_next_frame_descriptor(uintnat * pc, char ** sp)
 
 void caml_stash_backtrace(pctx ctx, value exn, uintnat pc, char * sp, char * trapsp)
 {
-  if (exn != caml_backtrace_last_exn) {
-    caml_backtrace_pos = 0;
-    caml_backtrace_last_exn = exn;
+  if (exn != ctx->caml_backtrace_last_exn) {
+    ctx->caml_backtrace_pos = 0;
+    ctx->caml_backtrace_last_exn = exn;
   }
-  if (caml_backtrace_buffer == NULL) {
-    caml_backtrace_buffer = malloc(BACKTRACE_BUFFER_SIZE * sizeof(code_t));
-    if (caml_backtrace_buffer == NULL) return;
+  if (ctx->caml_backtrace_buffer == NULL) {
+    ctx->caml_backtrace_buffer = malloc(BACKTRACE_BUFFER_SIZE * sizeof(code_t));
+    if (ctx->caml_backtrace_buffer == NULL) return;
   }
 
   /* iterate on each frame  */
@@ -121,8 +125,8 @@ void caml_stash_backtrace(pctx ctx, value exn, uintnat pc, char * sp, char * tra
     frame_descr * descr = caml_next_frame_descriptor(&pc, &sp);
     if (descr == NULL) return;
     /* store its descriptor in the backtrace buffer */
-    if (caml_backtrace_pos >= BACKTRACE_BUFFER_SIZE) return;
-    caml_backtrace_buffer[caml_backtrace_pos++] = (code_t) descr;
+    if (ctx->caml_backtrace_pos >= BACKTRACE_BUFFER_SIZE) return;
+    ctx->caml_backtrace_buffer[ctx->caml_backtrace_pos++] = (code_t) descr;
 
     /* Stop when we reach the current exception handler */
 #ifndef Stack_grows_upwards
@@ -287,8 +291,8 @@ void caml_print_exception_backtrace(pctx ctx)
   int i;
   struct loc_info li;
 
-  for (i = 0; i < caml_backtrace_pos; i++) {
-    extract_location_info((frame_descr *) (caml_backtrace_buffer[i]), &li);
+  for (i = 0; i < ctx->caml_backtrace_pos; i++) {
+    extract_location_info((frame_descr *) (ctx->caml_backtrace_buffer[i]), &li);
     print_location(&li, i);
   }
 }
@@ -324,14 +328,14 @@ CAMLprim value caml_convert_raw_backtrace(value backtrace) {
 
 /* Get a copy of the latest backtrace */
 
-CAMLprim value caml_get_exception_raw_backtrace(value unit)
+CAMLprim value caml_get_exception_raw_backtrace(pctx ctx, value unit)
 {
   CAMLparam0();
   CAMLlocal1(res);
-  res = caml_alloc(caml_backtrace_pos, Abstract_tag);
-  if(caml_backtrace_buffer != NULL)
-    memcpy(&Field(res, 0), caml_backtrace_buffer,
-           caml_backtrace_pos * sizeof(code_t));
+  res = caml_alloc(ctx->caml_backtrace_pos, Abstract_tag);
+  if(ctx->caml_backtrace_buffer != NULL)
+    memcpy(&Field(res, 0), ctx->caml_backtrace_buffer,
+           ctx->caml_backtrace_pos * sizeof(code_t));
   CAMLreturn(res);
 }
 

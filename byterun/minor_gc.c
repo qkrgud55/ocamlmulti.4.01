@@ -80,26 +80,26 @@ void caml_set_minor_heap_size (pctx ctx, asize_t size)
   Assert (size >= Bsize_wsize(Minor_heap_min));
   Assert (size <= Bsize_wsize(Minor_heap_max));
   Assert (size % sizeof (value) == 0);
-  if (caml_young_ptr != caml_young_end) caml_minor_collection ();
-                                    Assert (caml_young_ptr == caml_young_end);
+  if (ctx->caml_young_ptr != ctx->caml_young_end) caml_minor_collection ();
+                                    Assert (ctx->caml_young_ptr == ctx->caml_young_end);
   new_heap = caml_aligned_malloc(size, 0, &new_heap_base);
   if (new_heap == NULL) caml_raise_out_of_memory();
   if (caml_page_table_add(In_young, new_heap, new_heap + size) != 0)
     caml_raise_out_of_memory();
 
-  if (caml_young_start != NULL){
-    caml_page_table_remove(In_young, caml_young_start, caml_young_end);
-    free (caml_young_base);
+  if (ctx->caml_young_start != NULL){
+    caml_page_table_remove(In_young, ctx->caml_young_start, ctx->caml_young_end);
+    free (ctx->caml_young_base);
   }
-  caml_young_base = new_heap_base;
-  caml_young_start = new_heap;
-  caml_young_end = new_heap + size;
-  caml_young_limit = caml_young_start;
-  caml_young_ptr = caml_young_end;
-  caml_minor_heap_size = size;
+  ctx->caml_young_base = new_heap_base;
+  ctx->caml_young_start = new_heap;
+  ctx->caml_young_end = new_heap + size;
+  ctx->caml_young_limit = ctx->caml_young_start;
+  ctx->caml_young_ptr = ctx->caml_young_end;
+  ctx->caml_minor_heap_size = size;
 
-  reset_table (&caml_ref_table);
-  reset_table (&caml_weak_ref_table);
+  reset_table (&ctx->caml_ref_table);
+  reset_table (&ctx->caml_weak_ref_table);
 }
 
 static value oldify_todo_list = 0;
@@ -116,7 +116,7 @@ void caml_oldify_one (pctx ctx, value v, value *p)
 
  tail_call:
   if (Is_block (v) && Is_young (v)){
-    Assert (Hp_val (v) >= caml_young_ptr);
+    Assert (Hp_val (v) >= ctx->caml_young_ptr);
     hd = Hd_val (v);
     if (hd == 0){         /* If already forwarded */
       *p = Field (v, 0);  /*  then forward pointer is first field. */
@@ -133,8 +133,8 @@ void caml_oldify_one (pctx ctx, value v, value *p)
         Field (v, 0) = result;     /*  and forward pointer. */
         if (sz > 1){
           Field (result, 0) = field0;
-          Field (result, 1) = oldify_todo_list;    /* Add this block */
-          oldify_todo_list = v;                    /*  to the "to do" list. */
+          Field (result, 1) = ctx->oldify_todo_list;    /* Add this block */
+          ctx->oldify_todo_list = v;                    /*  to the "to do" list. */
         }else{
           Assert (sz == 1);
           p = &Field (result, 0);
@@ -199,11 +199,11 @@ void caml_oldify_mopup (pctx ctx)
   value v, new_v, f;
   mlsize_t i;
 
-  while (oldify_todo_list != 0){
-    v = oldify_todo_list;                /* Get the head. */
+  while (ctx->oldify_todo_list != 0){
+    v = ctx->oldify_todo_list;                /* Get the head. */
     Assert (Hd_val (v) == 0);            /* It must be forwarded. */
     new_v = Field (v, 0);                /* Follow forward pointer. */
-    oldify_todo_list = Field (new_v, 1); /* Remove from list. */
+    ctx->oldify_todo_list = Field (new_v, 1); /* Remove from list. */
 
     f = Field (new_v, 0);
     if (Is_block (f) && Is_young (f)){
@@ -227,15 +227,15 @@ void caml_empty_minor_heap (pctx ctx)
 {
   value **r;
 
-  if (caml_young_ptr != caml_young_end){
-    caml_in_minor_collection = 1;
+  if (ctx->caml_young_ptr != ctx->caml_young_end){
+    ctx->caml_in_minor_collection = 1;
     caml_gc_message (0x02, "<", 0);
     caml_oldify_local_roots();
-    for (r = caml_ref_table.base; r < caml_ref_table.ptr; r++){
+    for (r = ctx->caml_ref_table.base; r < ctx->caml_ref_table.ptr; r++){
       caml_oldify_one (**r, *r);
     }
     caml_oldify_mopup ();
-    for (r = caml_weak_ref_table.base; r < caml_weak_ref_table.ptr; r++){
+    for (r = ctx->caml_weak_ref_table.base; r < ctx->caml_weak_ref_table.ptr; r++){
       if (Is_block (**r) && Is_young (**r)){
         if (Hd_val (**r) == 0){
           **r = Field (**r, 0);
@@ -244,20 +244,20 @@ void caml_empty_minor_heap (pctx ctx)
         }
       }
     }
-    if (caml_young_ptr < caml_young_start) caml_young_ptr = caml_young_start;
-    caml_stat_minor_words += Wsize_bsize (caml_young_end - caml_young_ptr);
-    caml_young_ptr = caml_young_end;
-    caml_young_limit = caml_young_start;
-    clear_table (&caml_ref_table);
-    clear_table (&caml_weak_ref_table);
+    if (ctx->caml_young_ptr < ctx->caml_young_start) ctx->caml_young_ptr = ctx->caml_young_start;
+    ctx->caml_stat_minor_words += Wsize_bsize (ctx->caml_young_end - ctx->caml_young_ptr);
+    ctx->caml_young_ptr = ctx->caml_young_end;
+    ctx->caml_young_limit = ctx->caml_young_start;
+    clear_table (&ctx->caml_ref_table);
+    clear_table (&ctx->caml_weak_ref_table);
     caml_gc_message (0x02, ">", 0);
-    caml_in_minor_collection = 0;
+    ctx->caml_in_minor_collection = 0;
   }
   caml_final_empty_young ();
 #ifdef DEBUG
   {
     value *p;
-    for (p = (value *) caml_young_start; p < (value *) caml_young_end; ++p){
+    for (p = (value *) ctx->caml_young_start; p < (value *) ctx->caml_young_end; ++p){
       *p = Debug_free_minor;
     }
     ++ minor_gc_counter;
@@ -271,14 +271,14 @@ void caml_empty_minor_heap (pctx ctx)
 */
 CAMLexport void caml_minor_collection (pctx ctx)
 {
-  intnat prev_alloc_words = caml_allocated_words;
+  intnat prev_alloc_words = ctx->caml_allocated_words;
 
   caml_empty_minor_heap ();
 
-  caml_stat_promoted_words += caml_allocated_words - prev_alloc_words;
-  ++ caml_stat_minor_collections;
+  ctx->caml_stat_promoted_words += ctx->caml_allocated_words - prev_alloc_words;
+  ++ ctx->caml_stat_minor_collections;
   caml_major_collection_slice (0);
-  caml_force_major_slice = 0;
+  ctx->caml_force_major_slice = 0;
 
   caml_final_do_calls ();
 
@@ -288,7 +288,7 @@ CAMLexport void caml_minor_collection (pctx ctx)
 CAMLexport value caml_check_urgent_gc (pctx ctx, value extra_root)
 {
   CAMLparam1 (extra_root);
-  if (caml_force_major_slice) caml_minor_collection();
+  if (ctx->caml_force_major_slice) caml_minor_collection();
   CAMLreturn (extra_root);
 }
 
@@ -298,7 +298,7 @@ void caml_realloc_ref_table (pctx ctx, struct caml_ref_table *tbl)
                                       Assert (tbl->limit >= tbl->threshold);
 
   if (tbl->base == NULL){
-    caml_alloc_table (tbl, caml_minor_heap_size / sizeof (value) / 8, 256);
+    caml_alloc_table (tbl, ctx->caml_minor_heap_size / sizeof (value) / 8, 256);
   }else if (tbl->limit == tbl->threshold){
     caml_gc_message (0x08, "ref_table threshold crossed\n", 0);
     tbl->limit = tbl->end;
@@ -306,7 +306,7 @@ void caml_realloc_ref_table (pctx ctx, struct caml_ref_table *tbl)
   }else{ /* This will almost never happen with the bytecode interpreter. */
     asize_t sz;
     asize_t cur_ptr = tbl->ptr - tbl->base;
-                                             Assert (caml_force_major_slice);
+                                             Assert (ctx->caml_force_major_slice);
 
     tbl->size *= 2;
     sz = (tbl->size + tbl->reserve) * sizeof (value *);

@@ -3,6 +3,7 @@ import os, re
 import sys
 import termios
 import fcntl
+from termcolor import colored
 
 def getch():
     fd = sys.stdin.fileno()
@@ -25,6 +26,10 @@ def getch():
         termios.tcsetattr(fd, termios.TCSAFLUSH, oldterm)
         fcntl.fcntl(fd, fcntl.F_SETFL, oldflags)
     return c
+
+def printn(s):
+  print s,
+  sys.stdout.write('')
 
 keyset = set()
 typeset = set()
@@ -58,7 +63,7 @@ def none_str(s):
 
 def parse_reentrant_def1():
   reentrant_funs = set()
-  f = open("/home/phc/ocaml_internal/ocamlmulti/reentrant_def", "r")
+  f = open("reentrant_def", "r")
   count = 0
   while True:
     line = f.readline()
@@ -82,7 +87,7 @@ def parse_reentrant_def1():
   
 def parse_reentrant_var():
   reentrant_vars = set()
-  f = open("/home/phc/ocaml_internal/ocamlmulti/reentrant_var", "r")
+  f = open("reentrant_var", "r")
   count = 0
   while True:
     line = f.readline()
@@ -178,7 +183,7 @@ def handle_line_var(filepath, lines, idx, line):
       it += m.regs[0][1]
       continue
 
-    print '\n'*3
+    print '\n'*1
     print filepath
     print '-'*50
     
@@ -188,14 +193,23 @@ def handle_line_var(filepath, lines, idx, line):
     if end > len(lines):
       end = len(lines)
     for it1 in range(start,end):
-      print '%4d :' % (it1), lines[it1]
       if it1==idx:
-        print 'found:', ' '*(it+m.regs[0][0]) + '='*len(symbol)
+        printn(colored('%4d : ' % it1, 'red'))
+        printn(line[:offset]) 
+        printn(colored(line[offset:offset+len(symbol)],'green')) 
+        printn(line[offset+len(symbol):])
+        print ''
+        printn('found: '+' '*(offset))
+        print colored('='*len(symbol), 'yellow')
+      else:
+        print '%4d :' % (it1), lines[it1]
 
     result_line = line[:offset] + "ctx->" + line[offset:]
-    print '\n'*3
+    print '\n'*1
     print 'result','-'*30
-    print result_line
+    printn(line[:offset])
+    printn(colored("ctx->"+symbol,'green'))
+    print line[offset+len(symbol):]
 
     if no_count < skip_num:
       no_count += 1
@@ -236,7 +250,7 @@ def traverse_fun(root, dirs, files):
       count += 1
 
 def traverse():
-  basedir = '/home/phc/ocaml_internal/ocamlmulti401'
+  basedir = './'
   for root, dirs, files in os.walk(basedir + "/byterun"):
     traverse_fun(root,dirs,files)
   for root, dirs, files in os.walk(basedir + "/asmrun"):

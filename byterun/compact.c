@@ -114,12 +114,12 @@ static char *compact_fl;
 
 static void init_compact_allocate (pctx ctx)
 {
-  char *ch = caml_heap_start;
+  char *ch = ctx->caml_heap_start;
   while (ch != NULL){
     Chunk_alloc (ch) = 0;
     ch = Chunk_next (ch);
   }
-  compact_fl = caml_heap_start;
+  ctx->compact_fl = ctx->caml_heap_start;
 }
 
 static char *compact_allocate (pctx ctx, mlsize_t size)
@@ -127,13 +127,13 @@ static char *compact_allocate (pctx ctx, mlsize_t size)
 {
   char *chunk, *adr;
 
-  while (Chunk_size (compact_fl) - Chunk_alloc (compact_fl) <= Bhsize_wosize (3)
-         && Chunk_size (Chunk_next (compact_fl))
-            - Chunk_alloc (Chunk_next (compact_fl))
+  while (Chunk_size (ctx->compact_fl) - Chunk_alloc (ctx->compact_fl) <= Bhsize_wosize (3)
+         && Chunk_size (Chunk_next (ctx->compact_fl))
+            - Chunk_alloc (Chunk_next (ctx->compact_fl))
             <= Bhsize_wosize (3)){
-    compact_fl = Chunk_next (compact_fl);
+    ctx->compact_fl = Chunk_next (ctx->compact_fl);
   }
-  chunk = compact_fl;
+  chunk = ctx->compact_fl;
   while (Chunk_size (chunk) - Chunk_alloc (chunk) < size){
     chunk = Chunk_next (chunk);                         Assert (chunk != NULL);
   }
@@ -145,7 +145,7 @@ static char *compact_allocate (pctx ctx, mlsize_t size)
 static void do_compaction (pctx ctx)
 {
   char *ch, *chend;
-                                          Assert (caml_gc_phase == Phase_idle);
+                                          Assert (ctx->caml_gc_phase == Phase_idle);
   caml_gc_message (0x10, "Compacting heap...\n", 0);
 
 #ifdef DEBUG
@@ -154,7 +154,7 @@ static void do_compaction (pctx ctx)
 
   /* First pass: encode all noninfix headers. */
   {
-    ch = caml_heap_start;
+    ch = ctx->caml_heap_start;
     while (ch != NULL){
       header_t *p = (header_t *) ch;
 
@@ -187,7 +187,7 @@ static void do_compaction (pctx ctx)
     caml_do_roots (invert_root);
     caml_final_do_weak_roots (invert_root);
 
-    ch = caml_heap_start;
+    ch = ctx->caml_heap_start;
     while (ch != NULL){
       word *p = (word *) ch;
       chend = ch + Chunk_size (ch);
@@ -220,7 +220,7 @@ static void do_compaction (pctx ctx)
     }
     /* Invert weak pointers. */
     {
-      value *pp = &caml_weak_list_head;
+      value *pp = &ctx->caml_weak_list_head;
       value p;
       word q;
       size_t sz, i;
@@ -232,7 +232,7 @@ static void do_compaction (pctx ctx)
         while (Ecolor (q) == 0) q = * (word *) q;
         sz = Wosize_ehd (q);
         for (i = 1; i < sz; i++){
-          if (Field (p,i) != caml_weak_none){
+          if (Field (p,i) != ctx->caml_weak_none){
             invert_pointer_at ((word *) &(Field (p,i)));
           }
         }
@@ -247,7 +247,7 @@ static void do_compaction (pctx ctx)
      Rebuild infix headers. */
   {
     init_compact_allocate ();
-    ch = caml_heap_start;
+    ch = ctx->caml_heap_start;
     while (ch != NULL){
       word *p = (word *) ch;
 
@@ -320,7 +320,7 @@ static void do_compaction (pctx ctx)
      Use the exact same allocation algorithm as pass 3. */
   {
     init_compact_allocate ();
-    ch = caml_heap_start;
+    ch = ctx->caml_heap_start;
     while (ch != NULL){
       word *p = (word *) ch;
 
@@ -348,7 +348,7 @@ static void do_compaction (pctx ctx)
     asize_t free = 0;
     asize_t wanted;
 
-    ch = caml_heap_start;
+    ch = ctx->caml_heap_start;
     while (ch != NULL){
       if (Chunk_alloc (ch) != 0){
         live += Wsize_bsize (Chunk_alloc (ch));
@@ -359,8 +359,8 @@ static void do_compaction (pctx ctx)
 
     /* Add up the empty chunks until there are enough, then remove the
        other empty chunks. */
-    wanted = caml_percent_free * (live / 100 + 1);
-    ch = caml_heap_start;
+    wanted = ctx->caml_percent_free * (live / 100 + 1);
+    ch = ctx->caml_heap_start;
     while (ch != NULL){
       char *next_chunk = Chunk_next (ch);  /* Chunk_next (ch) will be erased */
 
@@ -377,7 +377,7 @@ static void do_compaction (pctx ctx)
 
   /* Rebuild the free list. */
   {
-    ch = caml_heap_start;
+    ch = ctx->caml_heap_start;
     caml_fl_reset ();
     while (ch != NULL){
       if (Chunk_size (ch) > Chunk_alloc (ch)){
@@ -388,11 +388,11 @@ static void do_compaction (pctx ctx)
       ch = Chunk_next (ch);
     }
   }
-  ++ caml_stat_compactions;
+  ++ ctx->caml_stat_compactions;
   caml_gc_message (0x10, "done.\n", 0);
 }
 
-uintnat caml_percent_max;  /* used in gc_ctrl.c and memory.c */
+uintnat ctx->caml_percent_max;  /* used in gc_ctrl.c and memory.c */
 
 void caml_compact_heap (pctx ctx)
 {
@@ -413,10 +413,10 @@ void caml_compact_heap (pctx ctx)
      See PR#5389
   */
   /* We compute:
-     freewords = caml_fl_cur_size                  (exact)
+     freewords = ctx->caml_fl_cur_size                  (exact)
      heapwords = Wsize_bsize (caml_heap_size)      (exact)
      live = heapwords - freewords
-     wanted = caml_percent_free * (live / 100 + 1) (same as in do_compaction)
+     wanted = ctx->caml_percent_free * (live / 100 + 1) (same as in do_compaction)
      target_words = live + wanted
      We add one page to make sure a small difference in counting sizes
      won't make [do_compaction] keep the second block (and break all sorts
@@ -424,11 +424,11 @@ void caml_compact_heap (pctx ctx)
 
      We recompact if target_size < heap_size / 2
   */
-  live = Wsize_bsize (caml_stat_heap_size) - caml_fl_cur_size;
-  target_words = live + caml_percent_free * (live / 100 + 1)
+  live = Wsize_bsize (ctx->caml_stat_heap_size) - ctx->caml_fl_cur_size;
+  target_words = live + ctx->caml_percent_free * (live / 100 + 1)
                  + Wsize_bsize (Page_size);
   target_size = caml_round_heap_chunk_size (Bsize_wsize (target_words));
-  if (target_size < caml_stat_heap_size / 2){
+  if (target_size < ctx->caml_stat_heap_size / 2){
     char *chunk;
 
     caml_gc_message (0x10, "Recompacting heap (target=%luk)\n",
@@ -444,57 +444,57 @@ void caml_compact_heap (pctx ctx)
       caml_free_for_heap (chunk);
       return;
     }
-    Chunk_next (chunk) = caml_heap_start;
-    caml_heap_start = chunk;
-    ++ caml_stat_heap_chunks;
-    caml_stat_heap_size += Chunk_size (chunk);
-    if (caml_stat_heap_size > caml_stat_top_heap_size){
-      caml_stat_top_heap_size = caml_stat_heap_size;
+    Chunk_next (chunk) = ctx->caml_heap_start;
+    ctx->caml_heap_start = chunk;
+    ++ ctx->caml_stat_heap_chunks;
+    ctx->caml_stat_heap_size += Chunk_size (chunk);
+    if (ctx->caml_stat_heap_size > ctx->caml_stat_top_heap_size){
+      ctx->caml_stat_top_heap_size = ctx->caml_stat_heap_size;
     }
     do_compaction ();
-    Assert (caml_stat_heap_chunks == 1);
-    Assert (Chunk_next (caml_heap_start) == NULL);
-    Assert (caml_stat_heap_size == Chunk_size (chunk));
+    Assert (ctx->caml_stat_heap_chunks == 1);
+    Assert (Chunk_next (ctx->caml_heap_start) == NULL);
+    Assert (ctx->caml_stat_heap_size == Chunk_size (chunk));
   }
 }
 
 void caml_compact_heap_maybe (pctx ctx)
 {
   /* Estimated free words in the heap:
-         FW = fl_size_at_change + 3 * (caml_fl_cur_size
-                                       - caml_fl_size_at_phase_change)
-         FW = 3 * caml_fl_cur_size - 2 * caml_fl_size_at_phase_change
-     Estimated live words:      LW = caml_stat_heap_size - FW
+         FW = fl_size_at_change + 3 * (ctx->caml_fl_cur_size
+                                       - ctx->caml_fl_size_at_phase_change)
+         FW = 3 * ctx->caml_fl_cur_size - 2 * ctx->caml_fl_size_at_phase_change
+     Estimated live words:      LW = ctx->caml_stat_heap_size - FW
      Estimated free percentage: FP = 100 * FW / LW
-     We compact the heap if FP > caml_percent_max
+     We compact the heap if FP > ctx->caml_percent_max
   */
   float fw, fp;
-                                          Assert (caml_gc_phase == Phase_idle);
-  if (caml_percent_max >= 1000000) return;
-  if (caml_stat_major_collections < 3) return;
+                                          Assert (ctx->caml_gc_phase == Phase_idle);
+  if (ctx->caml_percent_max >= 1000000) return;
+  if (ctx->caml_stat_major_collections < 3) return;
 
-  fw = 3.0 * caml_fl_cur_size - 2.0 * caml_fl_size_at_phase_change;
-  if (fw < 0) fw = caml_fl_cur_size;
+  fw = 3.0 * ctx->caml_fl_cur_size - 2.0 * ctx->caml_fl_size_at_phase_change;
+  if (fw < 0) fw = ctx->caml_fl_cur_size;
 
-  if (fw >= Wsize_bsize (caml_stat_heap_size)){
+  if (fw >= Wsize_bsize (ctx->caml_stat_heap_size)){
     fp = 1000000.0;
   }else{
-    fp = 100.0 * fw / (Wsize_bsize (caml_stat_heap_size) - fw);
+    fp = 100.0 * fw / (Wsize_bsize (ctx->caml_stat_heap_size) - fw);
     if (fp > 1000000.0) fp = 1000000.0;
   }
   caml_gc_message (0x200, "FL size at phase change = %"
                           ARCH_INTNAT_PRINTF_FORMAT "u\n",
-                   (uintnat) caml_fl_size_at_phase_change);
+                   (uintnat) ctx->caml_fl_size_at_phase_change);
   caml_gc_message (0x200, "Estimated overhead = %"
                           ARCH_INTNAT_PRINTF_FORMAT "u%%\n",
                    (uintnat) fp);
-  if (fp >= caml_percent_max){
+  if (fp >= ctx->caml_percent_max){
     caml_gc_message (0x200, "Automatic compaction triggered.\n", 0);
     caml_finish_major_cycle ();
 
     /* We just did a complete GC, so we can measure the overhead exactly. */
-    fw = caml_fl_cur_size;
-    fp = 100.0 * fw / (Wsize_bsize (caml_stat_heap_size) - fw);
+    fw = ctx->caml_fl_cur_size;
+    fp = 100.0 * fw / (Wsize_bsize (ctx->caml_stat_heap_size) - fw);
     caml_gc_message (0x200, "Measured overhead: %"
                             ARCH_INTNAT_PRINTF_FORMAT "u%%\n",
                      (uintnat) fp);

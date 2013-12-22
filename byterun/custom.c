@@ -57,14 +57,14 @@ CAMLexport void caml_register_custom_operations(pctx ctx, struct custom_operatio
   Assert(ops->identifier != NULL);
   Assert(ops->deserialize != NULL);
   l->ops = ops;
-  l->next = custom_ops_table;
-  custom_ops_table = l;
+  l->next = ctx->custom_ops_table;
+  ctx->custom_ops_table = l;
 }
 
 struct custom_operations * caml_find_custom_operations(pctx ctx, char * ident)
 {
   struct custom_operations_list * l;
-  for (l = custom_ops_table; l != NULL; l = l->next)
+  for (l = ctx->custom_ops_table; l != NULL; l = l->next)
     if (strcmp(l->ops->identifier, ident) == 0) return l->ops;
   return NULL;
 }
@@ -75,7 +75,7 @@ struct custom_operations * caml_final_custom_operations(pctx ctx, final_fun fn)
 {
   struct custom_operations_list * l;
   struct custom_operations * ops;
-  for (l = custom_ops_final_table; l != NULL; l = l->next)
+  for (l = ctx->custom_ops_final_table; l != NULL; l = l->next)
     if (l->ops->finalize == fn) return l->ops;
   ops = caml_stat_alloc(sizeof(struct custom_operations));
   ops->identifier = "_final";
@@ -87,8 +87,8 @@ struct custom_operations * caml_final_custom_operations(pctx ctx, final_fun fn)
   ops->compare_ext = custom_compare_ext_default;
   l = caml_stat_alloc(sizeof(struct custom_operations_list));
   l->ops = ops;
-  l->next = custom_ops_final_table;
-  custom_ops_final_table = l;
+  l->next = ctx->custom_ops_final_table;
+  ctx->custom_ops_final_table = l;
   return ops;
 }
 

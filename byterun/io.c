@@ -70,11 +70,11 @@ CAMLexport struct channel * caml_open_descriptor_in(pctx ctx, int fd)
   channel->old_revealed = 0;
   channel->refcount = 0;
   channel->flags = 0;
-  channel->next = caml_all_opened_channels;
+  channel->next = ctx->caml_all_opened_channels;
   channel->prev = NULL;
-  if (caml_all_opened_channels != NULL)
-    caml_all_opened_channels->prev = channel;
-  caml_all_opened_channels = channel;
+  if (ctx->caml_all_opened_channels != NULL)
+    ctx->caml_all_opened_channels->prev = channel;
+  ctx->caml_all_opened_channels = channel;
   return channel;
 }
 
@@ -90,10 +90,10 @@ CAMLexport struct channel * caml_open_descriptor_out(pctx ctx, int fd)
 static void unlink_channel(pctx ctx, struct channel *channel)
 {
   if (channel->prev == NULL) {
-    Assert (channel == caml_all_opened_channels);
-    caml_all_opened_channels = caml_all_opened_channels->next;
-    if (caml_all_opened_channels != NULL)
-      caml_all_opened_channels->prev = NULL;
+    Assert (channel == ctx->caml_all_opened_channels);
+    ctx->caml_all_opened_channels = ctx->caml_all_opened_channels->next;
+    if (ctx->caml_all_opened_channels != NULL)
+      ctx->caml_all_opened_channels->prev = NULL;
   } else {
     channel->prev->next = channel->next;
     if (channel->next != NULL) channel->next->prev = channel->prev;
@@ -478,7 +478,7 @@ CAMLprim value caml_ml_out_channels_list (pctx ctx, value unit)
   struct channel * channel;
 
   res = Val_emptylist;
-  for (channel = caml_all_opened_channels;
+  for (channel = ctx->caml_all_opened_channels;
        channel != NULL;
        channel = channel->next)
     /* Testing channel->fd >= 0 looks unnecessary, as
