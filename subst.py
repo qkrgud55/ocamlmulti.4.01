@@ -108,7 +108,7 @@ def parse_reentrant_var():
   varset.difference_update(set([('md5.c','buf'), ('md5.c','in')]))
   print varset
 
-#parse_reentrant_def1()
+parse_reentrant_def1()
 parse_reentrant_var()
 
 def handle_line_fun(filepath, lines, idx, line):
@@ -233,6 +233,76 @@ def handle_line_var(filepath, lines, idx, line):
         no_count += 1
         it += m.regs[0][1]
 
+
+def handle_line_call(filepath, lines, idx, line):
+  global no_count, skip_num
+
+  it = 0
+  while True:
+    m = re.search(r'([a-zA-Z0-9_]+)\(ctx,', line[it:])
+    if m: 
+      it += m.span()[1]
+      continue  # already reetrant
+    m = re.search(r'([a-zA-Z0-9_]+)\(', line[it:])
+    if not m: break
+    fun_name = str.strip(m.groups()[0])
+    if fun_name not in funset:
+      it += m.span()[1]
+      continue
+    offset = it + m.span()[0]
+    
+    print '\n'*1
+    print filepath
+    print '-'*50
+    
+    start = idx - 15
+    if start < 0: start = 0
+    end = idx + 15
+    if end > len(lines):
+      end = len(lines)
+    for it1 in range(start,end):
+      if it1==idx:
+        printn(colored('%4d : ' % it1, 'red'))
+        printn(line[:offset]) 
+        printn(colored(line[offset:offset+len(fun_name)],'green')) 
+        printn(line[offset+len(fun_name):])
+        print ''
+        printn('found: '+' '*(offset))
+        print colored('='*len(fun_name), 'yellow')
+      else:
+        print '%4d :' % (it1), lines[it1]
+
+    offset_to_insert = it + m.span()[0] + 1
+
+    result_line = line[:offset_to_insert] + "ctx, " + line[offset_to_insert:]
+    print '\n'*1
+    print 'result','-'*30
+    printn(line[:offset_to_insert])
+    printn(colored("ctx",'green'))
+    print ', '+line[offset_to_insert:]
+
+    if no_count < skip_num:
+      no_count += 1
+      it = offset_to_insert
+    else:
+      print '(yes/no/quit)? :',
+      key = getch()
+      if key=='q':
+        fp = file('no_count','w')
+        fp.write(str(no_count))
+        fp.close()
+        return exit()
+      elif key=='y':
+        lines[idx] = result_line
+        fp = file(filepath, 'w')
+        fp.write('\n'.join(lines))
+        fp.close()
+        it = offset_to_insert
+        line = result_line
+      else:
+        no_count += 1
+        it = offset_to_insert
+
 def traverse_fun(root, dirs, files):
   print root
   for file_name in files:
@@ -246,7 +316,7 @@ def traverse_fun(root, dirs, files):
     count = 0
     offset = 0
     while count < len(lines):
-      handle_line_var(filepath,lines,count,lines[count])
+      handle_line_call(filepath,lines,count,lines[count])
       count += 1
 
 def traverse():
