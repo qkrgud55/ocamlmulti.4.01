@@ -239,7 +239,7 @@ def handle_line_call(filepath, lines, idx, line):
 
   it = 0
   while True:
-    m = re.search(r'([a-zA-Z0-9_]+)\(ctx,', line[it:])
+    m = re.search(r'([a-zA-Z0-9_]+)\(p?ctx', line[it:])
     if m: 
       it += m.span()[1]
       continue  # already reetrant
@@ -257,7 +257,7 @@ def handle_line_call(filepath, lines, idx, line):
     
     start = idx - 15
     if start < 0: start = 0
-    end = idx + 15
+    end = idx + 13
     if end > len(lines):
       end = len(lines)
     for it1 in range(start,end):
@@ -272,14 +272,20 @@ def handle_line_call(filepath, lines, idx, line):
       else:
         print '%4d :' % (it1), lines[it1]
 
-    offset_to_insert = it + m.span()[0] + 1
+    offset_to_insert = it + m.span()[0] + len(fun_name)
 
-    result_line = line[:offset_to_insert] + "ctx, " + line[offset_to_insert:]
     print '\n'*1
     print 'result','-'*30
-    printn(line[:offset_to_insert])
-    printn(colored("ctx",'green'))
-    print ', '+line[offset_to_insert:]
+    if line[offset_to_insert:offset_to_insert+2]=="()":
+      result_line = line[:offset_to_insert] + "(ctx)" + line[offset_to_insert+2:]
+      printn(line[:offset_to_insert])
+      printn(colored("(ctx)",'green'))
+      print line[offset_to_insert+2:]
+    else:
+      result_line = line[:offset_to_insert] + "(ctx, " + line[offset_to_insert+1:]
+      printn(line[:offset_to_insert])
+      printn(colored("(ctx, ",'green'))
+      print line[offset_to_insert+1:]
 
     if no_count < skip_num:
       no_count += 1
