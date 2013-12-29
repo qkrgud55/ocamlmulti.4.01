@@ -254,7 +254,7 @@ def handle_line_call(filepath, lines, idx, line):
     if m: 
       it += m.span()[1]
       continue  # already reetrant
-    m = re.search(r'([a-zA-Z0-9_]+)\s*\(', line[it:])
+    m = re.search(r'([a-zA-Z0-9_]+)\s*(\()', line[it:])
     if not m: break
     fun_name = str.strip(m.groups()[0])
     if fun_name not in funset:
@@ -283,24 +283,26 @@ def handle_line_call(filepath, lines, idx, line):
       else:
         print '%4d :' % (it1), lines[it1]
 
-    offset_to_insert = it + m.span()[0] + len(fun_name)
+    offset1 = it + m.span()[0]
+    offset2 = offset1 + len(fun_name)
+    offset3 = it + m.regs[2][1]
 
     print '\n'*1
     print 'result','-'*30
-    if line[offset_to_insert:offset_to_insert+2]=="()":
-      result_line = line[:offset_to_insert] + "(ctx)" + line[offset_to_insert+2:]
-      printn(line[:offset_to_insert])
-      printn(colored("(ctx)",'green'))
-      print line[offset_to_insert+2:]
+    if line[offset3]==")":
+      result_line = line[:offset3] + "ctx" + line[offset3:]
+      printn(line[:offset3])
+      printn(colored("ctx",'green'))
+      print line[offset3:]
     else:
-      result_line = line[:offset_to_insert] + "(ctx, " + line[offset_to_insert+1:]
-      printn(line[:offset_to_insert])
-      printn(colored("(ctx, ",'green'))
-      print line[offset_to_insert+1:]
+      result_line = line[:offset3] + "ctx, " + line[offset3:]
+      printn(line[:offset3])
+      printn(colored("ctx, ",'green'))
+      print line[offset3:]
 
     if no_count < skip_num:
       no_count += 1
-      it = offset_to_insert
+      it = offset3 
     else:
       print '(yes/no/quit)? :',
       key = getch()
@@ -314,11 +316,11 @@ def handle_line_call(filepath, lines, idx, line):
         fp = file(filepath, 'w')
         fp.write('\n'.join(lines))
         fp.close()
-        it = offset_to_insert
+        it = offset3 
         line = result_line
       else:
         no_count += 1
-        it = offset_to_insert
+        it = offset3 
 
 def traverse_fun(root, dirs, files):
   print root
