@@ -101,7 +101,7 @@ CAMLexport value caml_copy_string(pctx ctx, char const *s)
   return res;
 }
 
-CAMLexport value caml_alloc_array(value (*funct)(char const *),
+CAMLexport value caml_alloc_array(pctx ctx, value (*funct)(char const *),
                                   char const ** arr)
 {
   CAMLparam0 ();

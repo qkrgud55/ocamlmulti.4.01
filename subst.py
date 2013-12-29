@@ -62,6 +62,7 @@ def none_str(s):
   return s
 
 def parse_reentrant_def1():
+  global funset
   reentrant_funs = set()
   f = open("reentrant_def", "r")
   count = 0
@@ -84,6 +85,16 @@ def parse_reentrant_def1():
   print '='*50
   print typeset
   print '='*50
+
+  l1 = ['CAMLparam', 'CAMLxparam', 'CAMLlocal', 'Begin_roots']
+  l2 = ['0','1','2','3','4','5','N']
+  l = ['CAMLreturn', 'CAMLreturn0', 'CAMLreturnT',
+       'CAMLnoreturn', 'Store_field', 'End_roots']
+  for each1 in l1:
+    for each2 in l2:
+      l.append(each1+each2)
+  
+  funset = funset.union(set(l))
   
 def parse_reentrant_var():
   reentrant_vars = set()
@@ -239,11 +250,11 @@ def handle_line_call(filepath, lines, idx, line):
 
   it = 0
   while True:
-    m = re.search(r'([a-zA-Z0-9_]+)\(p?ctx', line[it:])
+    m = re.search(r'([a-zA-Z0-9_]+)\s*\(p?ctx', line[it:])
     if m: 
       it += m.span()[1]
       continue  # already reetrant
-    m = re.search(r'([a-zA-Z0-9_]+)\(', line[it:])
+    m = re.search(r'([a-zA-Z0-9_]+)\s*\(', line[it:])
     if not m: break
     fun_name = str.strip(m.groups()[0])
     if fun_name not in funset:

@@ -120,7 +120,7 @@ int caml_page_table_initialize(mlsize_t bytesize);
 
 /* Deprecated alias for [caml_modify] */
 
-#define Modify(fp,val) caml_modify((fp), (val))
+#define Modify(fp,val) caml_modify(ctx, (fp), (val))
 
 /* </private> */
 
