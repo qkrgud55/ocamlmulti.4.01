@@ -67,7 +67,7 @@ void caml_garbage_collection(pctx ctx)
 {
   ctx->caml_young_limit = ctx->caml_young_start;
   if (ctx->caml_young_ptr < ctx->caml_young_start || ctx->caml_force_major_slice) {
-    caml_minor_collection();
+    caml_minor_collection(ctx);
   }
   caml_process_pending_signals();
 }
@@ -82,10 +82,10 @@ DECLARE_SIGNAL_HANDLER(handle_signal)
 #endif
   if (sig < 0 || sig >= NSIG) return;
   if (caml_try_leave_blocking_section_hook ()) {
-    caml_execute_signal(sig, 1);
+    caml_execute_signal(ctx, sig, 1);
     caml_enter_blocking_section_hook();
   } else {
-    caml_record_signal(sig);
+    caml_record_signal(ctx, sig);
   /* Some ports cache [ctx->caml_young_limit] in a register.
      Use the signal context to modify that register too, but only if
      we are inside OCaml code (not inside C code). */
@@ -170,7 +170,7 @@ DECLARE_SIGNAL_HANDLER(trap_handler)
   caml_bottom_of_stack = (char *) CONTEXT_SP;
   caml_last_return_address = (uintnat) CONTEXT_PC;
 #endif
-  caml_array_bound_error();
+  caml_array_bound_error(ctx);
 }
 #endif
 
@@ -228,7 +228,7 @@ DECLARE_SIGNAL_HANDLER(segv_handler)
     caml_exception_pointer = (char *) CONTEXT_EXCEPTION_POINTER;
     ctx->caml_young_ptr = (char *) CONTEXT_YOUNG_PTR;
 #endif
-    caml_raise_stack_overflow();
+    caml_raise_stack_overflow(ctx);
 #endif
   } else {
     /* Otherwise, deactivate our exception handler and return,

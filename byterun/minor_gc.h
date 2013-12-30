@@ -53,7 +53,7 @@ extern void caml_oldify_mopup (pctx ctx);
 #define Oldify(p) do{ \
     value __oldify__v__ = *p; \
     if (Is_block (__oldify__v__) && Is_young (__oldify__v__)){ \
-      caml_oldify_one (__oldify__v__, (p)); \
+      caml_oldify_one (ctx, __oldify__v__, (p)); \
     } \
   }while(0)
 

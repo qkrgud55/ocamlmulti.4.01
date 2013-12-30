@@ -43,7 +43,7 @@ char * caml_decompose_path(struct ext_table * tbl, char * path)
   int n;
 
   if (path == NULL) return NULL;
-  p = caml_stat_alloc(strlen(path) + 1);
+  p = caml_stat_alloc(ctx, strlen(path) + 1);
   strcpy(p, path);
   q = p;
   while (1) {
@@ -67,7 +67,7 @@ char * caml_search_in_path(struct ext_table * path, char * name)
     if (*p == '/' || *p == '\\') goto not_found;
   }
   for (i = 0; i < path->size; i++) {
-    fullname = caml_stat_alloc(strlen((char *)(path->contents[i])) +
+    fullname = caml_stat_alloc(ctx, strlen((char *)(path->contents[i])) +
                                strlen(name) + 2);
     strcpy(fullname, (char *)(path->contents[i]));
     strcat(fullname, "\\");
@@ -78,7 +78,7 @@ char * caml_search_in_path(struct ext_table * path, char * name)
   }
  not_found:
   caml_gc_message(0x100, "%s not found in search path\n", (uintnat) name);
-  fullname = caml_stat_alloc(strlen(name) + 1);
+  fullname = caml_stat_alloc(ctx, strlen(name) + 1);
   strcpy(fullname, name);
   return fullname;
 }
@@ -91,7 +91,7 @@ CAMLexport char * caml_search_exe_in_path(char * name)
   pathlen = strlen(name) + 1;
   if (pathlen < 256) pathlen = 256;
   while (1) {
-    fullname = caml_stat_alloc(pathlen);
+    fullname = caml_stat_alloc(ctx, pathlen);
     retcode = SearchPath(NULL,              /* use system search path */
                          name,
                          ".exe",            /* add .exe extension if needed */
@@ -113,7 +113,7 @@ CAMLexport char * caml_search_exe_in_path(char * name)
 
 char * caml_search_dll_in_path(struct ext_table * path, char * name)
 {
-  char * dllname = caml_stat_alloc(strlen(name) + 5);
+  char * dllname = caml_stat_alloc(ctx, strlen(name) + 5);
   char * res;
   strcpy(dllname, name);
   strcat(dllname, ".dll");
@@ -175,7 +175,7 @@ static BOOL WINAPI ctrl_handler(DWORD event)
   /* Win32 doesn't like it when we do a longjmp() at this point
      (it looks like we're running in a different thread than
      the main program!).  So, just record the signal. */
-  caml_record_signal(SIGINT);
+  caml_record_signal(ctx, SIGINT);
   /* We have handled the event */
   return TRUE;
 }
@@ -289,7 +289,7 @@ int caml_read_directory(char * dirname, struct ext_table * contents)
   char * p;
 
   dirnamelen = strlen(dirname);
-  template = caml_stat_alloc(dirnamelen + 5);
+  template = caml_stat_alloc(ctx, dirnamelen + 5);
   strcpy(template, dirname);
   switch (dirname[dirnamelen - 1]) {
   case '/': case '\\': case ':':
@@ -302,7 +302,7 @@ int caml_read_directory(char * dirname, struct ext_table * contents)
   if (h == -1) return errno == ENOENT ? 0 : -1;
   do {
     if (strcmp(fileinfo.name, ".") != 0 && strcmp(fileinfo.name, "..") != 0) {
-      p = caml_stat_alloc(strlen(fileinfo.name) + 1);
+      p = caml_stat_alloc(ctx, strlen(fileinfo.name) + 1);
       strcpy(p, fileinfo.name);
       caml_ext_table_add(contents, p);
     }
@@ -330,7 +330,7 @@ void caml_signal_thread(void * lpParam)
     if (!ret || numread != 1) caml_sys_exit(Val_int(2));
     switch (iobuf[0]) {
     case 'C':
-      caml_record_signal(SIGINT);
+      caml_record_signal(ctx, SIGINT);
       break;
     case 'T':
       raise(SIGTERM);
@@ -417,7 +417,7 @@ static void caml_reset_stack (void *faulting_address)
   }
 
  failed:
-  caml_raise_stack_overflow();
+  caml_raise_stack_overflow(ctx);
 }
 
 extern char * caml_code_area_start, * caml_code_area_end;

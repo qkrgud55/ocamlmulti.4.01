@@ -65,7 +65,7 @@ CAMLprim value caml_terminfo_setup (value vchan)
       || standout == NULL || standend == NULL){
     return Bad_term;
   }
-  result = caml_alloc_small (1, Good_term_tag);
+  result = caml_alloc_small (ctx, 1, Good_term_tag);
   Field (result, 0) = Val_int (num_lines);
   return result;
 }
@@ -111,19 +111,19 @@ CAMLexport value caml_terminfo_setup (value vchan)
 
 CAMLexport value caml_terminfo_backup (value lines)
 {
-  caml_invalid_argument("Terminfo.backup");
+  caml_invalid_argument(ctx, "Terminfo.backup");
   return Val_unit;
 }
 
 CAMLexport value caml_terminfo_standout (value start)
 {
-  caml_invalid_argument("Terminfo.standout");
+  caml_invalid_argument(ctx, "Terminfo.standout");
   return Val_unit;
 }
 
 CAMLexport value caml_terminfo_resume (value lines)
 {
-  caml_invalid_argument("Terminfo.resume");
+  caml_invalid_argument(ctx, "Terminfo.resume");
   return Val_unit;
 }
 

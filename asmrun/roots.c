@@ -44,7 +44,7 @@ typedef struct link {
 } link;
 
 static link *cons(void *data, link *tl) {
-  link *lnk = caml_stat_alloc(sizeof(link));
+  link *lnk = caml_stat_alloc(ctx, sizeof(link));
   lnk->data = data;
   lnk->next = tl;
   return lnk;
@@ -80,7 +80,7 @@ void caml_init_frame_descriptors(pctx ctx)
 
   if (!inited) {
     for (i = 0; caml_frametable[i] != 0; i++)
-      caml_register_frametable(caml_frametable[i]);
+      caml_register_frametable(ctx, caml_frametable[i]);
     inited = 1;
   }
 
@@ -97,7 +97,7 @@ void caml_init_frame_descriptors(pctx ctx)
 
   /* Allocate the hash table */
   ctx->caml_frame_descriptors =
-    (frame_descr **) caml_stat_alloc(tblsize * sizeof(frame_descr *));
+    (frame_descr **) caml_stat_alloc(ctx, tblsize * sizeof(frame_descr *));
   for (i = 0; i < tblsize; i++) ctx->caml_frame_descriptors[i] = NULL;
   ctx->caml_frame_descriptors_mask = tblsize - 1;
 
@@ -177,7 +177,7 @@ void caml_oldify_local_roots (pctx ctx)
   }
 
   /* The stack and local roots */
-  if (ctx->caml_frame_descriptors == NULL) caml_init_frame_descriptors();
+  if (ctx->caml_frame_descriptors == NULL) caml_init_frame_descriptors(ctx);
   sp = ctx->caml_bottom_of_stack;
   retaddr = ctx->caml_last_return_address;
   regs = ctx->caml_gc_regs;
@@ -236,9 +236,9 @@ void caml_oldify_local_roots (pctx ctx)
     }
   }
   /* Global C roots */
-  caml_scan_global_young_roots(&caml_oldify_one);
+  caml_scan_global_young_roots(ctx, &caml_oldify_one);
   /* Finalised values */
-  caml_final_do_young_roots (&caml_oldify_one);
+  caml_final_do_young_roots (ctx, &caml_oldify_one);
   /* Hook */
   if (ctx->caml_scan_roots_hook != NULL) (*ctx->caml_scan_roots_hook)(&caml_oldify_one);
 }
@@ -247,7 +247,7 @@ void caml_oldify_local_roots (pctx ctx)
 
 void caml_darken_all_roots (pctx ctx)
 {
-  caml_do_roots (caml_darken);
+  caml_do_roots (ctx, caml_darken);
 }
 
 void caml_do_roots (pctx ctx, scanning_action f)
@@ -272,13 +272,13 @@ void caml_do_roots (pctx ctx, scanning_action f)
   }
 
   /* The stack and local roots */
-  if (ctx->caml_frame_descriptors == NULL) caml_init_frame_descriptors();
-  caml_do_local_roots(f, ctx->caml_bottom_of_stack, ctx->caml_last_return_address,
+  if (ctx->caml_frame_descriptors == NULL) caml_init_frame_descriptors(ctx);
+  caml_do_local_roots(ctx, f, ctx->caml_bottom_of_stack, ctx->caml_last_return_address,
                       ctx->caml_gc_regs, ctx->caml_local_roots);
   /* Global C roots */
-  caml_scan_global_roots(f);
+  caml_scan_global_roots(ctx, f);
   /* Finalised values */
-  caml_final_do_strong_roots (f);
+  caml_final_do_strong_roots (ctx, f);
   /* Hook */
   if (ctx->caml_scan_roots_hook != NULL) (*ctx->caml_scan_roots_hook)(f);
 }

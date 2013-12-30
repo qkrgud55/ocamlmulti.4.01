@@ -38,7 +38,7 @@ unsigned char * caml_saved_code;
 void caml_init_code_fragments() {
   struct code_fragment * cf;
   /* Register the code in the table of code fragments */
-  cf = caml_stat_alloc(sizeof(struct code_fragment));
+  cf = caml_stat_alloc(ctx, sizeof(struct code_fragment));
   cf->code_start = (char *) caml_start_code;
   cf->code_end = (char *) caml_start_code + caml_code_size;
   caml_md5_block(cf->digest, caml_start_code, caml_code_size);
@@ -52,7 +52,7 @@ void caml_load_code(int fd, asize_t len)
   int i;
 
   caml_code_size = len;
-  caml_start_code = (code_t) caml_stat_alloc(caml_code_size);
+  caml_start_code = (code_t) caml_stat_alloc(ctx, caml_code_size);
   if (read(fd, (char *) caml_start_code, caml_code_size) != caml_code_size)
     caml_fatal_error("Fatal error: truncated bytecode file.\n");
   caml_init_code_fragments();
@@ -62,7 +62,7 @@ void caml_load_code(int fd, asize_t len)
 #endif
   if (caml_debugger_in_use) {
     len /= sizeof(opcode_t);
-    caml_saved_code = (unsigned char *) caml_stat_alloc(len);
+    caml_saved_code = (unsigned char *) caml_stat_alloc(ctx, len);
     for (i = 0; i < len; i++) caml_saved_code[i] = caml_start_code[i];
   }
 #ifdef THREADED_CODE

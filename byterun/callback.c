@@ -105,7 +105,7 @@ CAMLexport value caml_callback_exn(pctx ctx, value closure, value arg1)
 {
   value arg[1];
   arg[0] = arg1;
-  return caml_callbackN_exn(0x0, closure, 1, arg); // phc todo ctx
+  return caml_callbackN_exn(ctx, 0x0, closure, 1, arg); // phc todo ctx
 }
 
 CAMLexport value caml_callback2_exn(pctx ctx, value closure, value arg1, value arg2)
@@ -113,7 +113,7 @@ CAMLexport value caml_callback2_exn(pctx ctx, value closure, value arg1, value a
   value arg[2];
   arg[0] = arg1;
   arg[1] = arg2;
-  return caml_callbackN_exn(0x0, closure, 2, arg); // phc todo ctx
+  return caml_callbackN_exn(ctx, 0x0, closure, 2, arg); // phc todo ctx
 }
 
 CAMLexport value caml_callback3_exn(pctx ctx, value closure,
@@ -123,7 +123,7 @@ CAMLexport value caml_callback3_exn(pctx ctx, value closure,
   arg[0] = arg1;
   arg[1] = arg2;
   arg[2] = arg3;
-  return caml_callbackN_exn(0x0, closure, 3, arg); // phc todo ctx
+  return caml_callbackN_exn(ctx, 0x0, closure, 3, arg); // phc todo ctx
 }
 
 #else
@@ -132,9 +132,9 @@ CAMLexport value caml_callback3_exn(pctx ctx, value closure,
 
 CAMLexport value caml_callbackN_exn(pctx ctx, value closure, int narg, value args[])
 {
-  CAMLparam1 (closure);
-  CAMLxparamN (args, narg);
-  CAMLlocal1 (res);
+  CAMLparam1 (ctx, closure);
+  CAMLxparamN (ctx, args, narg);
+  CAMLlocal1 (ctx, res);
   int i;
 
   res = closure;
@@ -142,23 +142,23 @@ CAMLexport value caml_callbackN_exn(pctx ctx, value closure, int narg, value arg
     /* Pass as many arguments as possible */
     switch (narg - i) {
     case 1:
-      res = caml_callback_exn(0x0, res, args[i]);  // phc todo ctx
-      if (Is_exception_result(res)) CAMLreturn (res);
+      res = caml_callback_exn(ctx, 0x0, res, args[i]);  // phc todo ctx
+      if (Is_exception_result(res)) CAMLreturn (ctx, res);
       i += 1;
       break;
     case 2:
-      res = caml_callback2_exn(0x0, res, args[i], args[i + 1]); // phc todo ctx
-      if (Is_exception_result(res)) CAMLreturn (res);
+      res = caml_callback2_exn(ctx, 0x0, res, args[i], args[i + 1]); // phc todo ctx
+      if (Is_exception_result(res)) CAMLreturn (ctx, res);
       i += 2;
       break;
     default:
-      res = caml_callback3_exn(0x0, res, args[i], args[i + 1], args[i + 2]); // phc todo ctx
-      if (Is_exception_result(res)) CAMLreturn (res);
+      res = caml_callback3_exn(ctx, 0x0, res, args[i], args[i + 1], args[i + 2]); // phc todo ctx
+      if (Is_exception_result(res)) CAMLreturn (ctx, res);
       i += 3;
       break;
     }
   }
-  CAMLreturn (res);
+  CAMLreturn (ctx, res);
 }
 
 #endif
@@ -167,30 +167,30 @@ CAMLexport value caml_callbackN_exn(pctx ctx, value closure, int narg, value arg
 
 CAMLexport value caml_callback (pctx ctx, value closure, value arg)
 {
-  value res = caml_callback_exn(0x0, closure, arg); // phc todo ctx
-  if (Is_exception_result(res)) caml_raise(Extract_exception(res));
+  value res = caml_callback_exn(ctx, 0x0, closure, arg); // phc todo ctx
+  if (Is_exception_result(res)) caml_raise(ctx, Extract_exception(res));
   return res;
 }
 
 CAMLexport value caml_callback2 (pctx ctx, value closure, value arg1, value arg2)
 {
-  value res = caml_callback2_exn(0x0, closure, arg1, arg2); // phc todo ctx
-  if (Is_exception_result(res)) caml_raise(Extract_exception(res));
+  value res = caml_callback2_exn(ctx, 0x0, closure, arg1, arg2); // phc todo ctx
+  if (Is_exception_result(res)) caml_raise(ctx, Extract_exception(res));
   return res;
 }
 
 CAMLexport value caml_callback3 (pctx ctx, value closure, value arg1, value arg2,
                                  value arg3)
 {
-  value res = caml_callback3_exn(0x0, closure, arg1, arg2, arg3); // phc todo ctx
-  if (Is_exception_result(res)) caml_raise(Extract_exception(res));
+  value res = caml_callback3_exn(ctx, 0x0, closure, arg1, arg2, arg3); // phc todo ctx
+  if (Is_exception_result(res)) caml_raise(ctx, Extract_exception(res));
   return res;
 }
 
 CAMLexport value caml_callbackN (pctx ctx, value closure, int narg, value args[])
 {
-  value res = caml_callbackN_exn(0x0, closure, narg, args); // phc todo ctx
-  if (Is_exception_result(res)) caml_raise(Extract_exception(res));
+  value res = caml_callbackN_exn(ctx, 0x0, closure, narg, args); // phc todo ctx
+  if (Is_exception_result(res)) caml_raise(ctx, Extract_exception(res));
   return res;
 }
 
@@ -228,12 +228,12 @@ CAMLprim value caml_register_named_value(pctx ctx, value vname, value val)
     }
   }
   nv = (struct named_value *)
-         caml_stat_alloc(sizeof(struct named_value) + strlen(name));
+         caml_stat_alloc(ctx, sizeof(struct named_value) + strlen(name));
   strcpy(nv->name, name);
   nv->val = val;
   nv->next = ctx->named_value_table[h];
   ctx->named_value_table[h] = nv;
-  caml_register_global_root(&nv->val);
+  caml_register_global_root(ctx, &nv->val);
   return Val_unit;
 }
 

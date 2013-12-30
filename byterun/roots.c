@@ -39,21 +39,21 @@ void caml_oldify_local_roots (pctx ctx)
 
   /* The stack */
   for (sp = caml_extern_sp; sp < caml_stack_high; sp++) {
-    caml_oldify_one (*sp, sp);
+    caml_oldify_one (ctx, *sp, sp);
   }
   /* Local C roots */  /* FIXME do the old-frame trick ? */
   for (lr = ctx->caml_local_roots; lr != NULL; lr = lr->next) {
     for (i = 0; i < lr->ntables; i++){
       for (j = 0; j < lr->nitems; j++){
         sp = &(lr->tables[i][j]);
-        caml_oldify_one (*sp, sp);
+        caml_oldify_one (ctx, *sp, sp);
       }
     }
   }
   /* Global C roots */
-  caml_scan_global_young_roots(&caml_oldify_one);
+  caml_scan_global_young_roots(ctx, &caml_oldify_one);
   /* Finalised values */
-  caml_final_do_young_roots (&caml_oldify_one);
+  caml_final_do_young_roots (ctx, &caml_oldify_one);
   /* Hook */
   if (ctx->caml_scan_roots_hook != NULL) (*ctx->caml_scan_roots_hook)(&caml_oldify_one);
 }
@@ -62,7 +62,7 @@ void caml_oldify_local_roots (pctx ctx)
 
 void caml_darken_all_roots (pctx ctx)
 {
-  caml_do_roots (caml_darken);
+  caml_do_roots (ctx, caml_darken);
 }
 
 void caml_do_roots (pctx ctx, scanning_action f)
@@ -70,11 +70,11 @@ void caml_do_roots (pctx ctx, scanning_action f)
   /* Global variables */
   f(caml_global_data, &caml_global_data);
   /* The stack and the local C roots */
-  caml_do_local_roots(f, caml_extern_sp, caml_stack_high, ctx->caml_local_roots);
+  caml_do_local_roots(ctx, f, caml_extern_sp, caml_stack_high, ctx->caml_local_roots);
   /* Global C roots */
-  caml_scan_global_roots(f);
+  caml_scan_global_roots(ctx, f);
   /* Finalised values */
-  caml_final_do_strong_roots (f);
+  caml_final_do_strong_roots (ctx, f);
   /* Hook */
   if (ctx->caml_scan_roots_hook != NULL) (*ctx->caml_scan_roots_hook)(f);
 }

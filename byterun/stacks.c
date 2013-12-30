@@ -32,7 +32,7 @@ uintnat caml_max_stack_size;            /* also used in gc_ctrl.c */
 
 void caml_init_stack (uintnat initial_max_size)
 {
-  caml_stack_low = (value *) caml_stat_alloc(Stack_size);
+  caml_stack_low = (value *) caml_stat_alloc(ctx, Stack_size);
   caml_stack_high = caml_stack_low + Stack_size / sizeof (value);
   caml_stack_threshold = caml_stack_low + Stack_threshold / sizeof (value);
   caml_extern_sp = caml_stack_high;
@@ -52,13 +52,13 @@ void caml_realloc_stack(asize_t required_space)
   Assert(caml_extern_sp >= caml_stack_low);
   size = caml_stack_high - caml_stack_low;
   do {
-    if (size >= caml_max_stack_size) caml_raise_stack_overflow();
+    if (size >= caml_max_stack_size) caml_raise_stack_overflow(ctx);
     size *= 2;
   } while (size < caml_stack_high - caml_extern_sp + required_space);
   caml_gc_message (0x08, "Growing stack to %"
                          ARCH_INTNAT_PRINTF_FORMAT "uk bytes\n",
                    (uintnat) size * sizeof(value) / 1024);
-  new_low = (value *) caml_stat_alloc(size * sizeof(value));
+  new_low = (value *) caml_stat_alloc(ctx, size * sizeof(value));
   new_high = new_low + size;
 
 #define shift(ptr) \

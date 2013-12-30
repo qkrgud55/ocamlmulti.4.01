@@ -168,7 +168,7 @@ char *caml_fl_allocate (pctx ctx, mlsize_t wo_sz)
     cur = Next (prev);
     while (cur != NULL){                             Assert (Is_in_heap (cur));
       if (Wosize_bp (cur) >= wo_sz){
-        return allocate_block (Whsize_wosize (wo_sz), 0, prev, cur);
+        return allocate_block (ctx, Whsize_wosize (wo_sz), 0, prev, cur);
       }
       prev = cur;
       cur = Next (prev);
@@ -179,7 +179,7 @@ char *caml_fl_allocate (pctx ctx, mlsize_t wo_sz)
     cur = Next (prev);
     while (prev != ctx->fl_prev){
       if (Wosize_bp (cur) >= wo_sz){
-        return allocate_block (Whsize_wosize (wo_sz), 0, prev, cur);
+        return allocate_block (ctx, Whsize_wosize (wo_sz), 0, prev, cur);
       }
       prev = cur;
       cur = Next (prev);
@@ -196,7 +196,7 @@ char *caml_fl_allocate (pctx ctx, mlsize_t wo_sz)
 #if FREELIST_DEBUG
         if (i > 5) fprintf (stderr, "FLP: found at %d  size=%d\n", i, wo_sz);
 #endif
-        result = allocate_block (Whsize_wosize (wo_sz), i, ctx->flp[i],
+        result = allocate_block (ctx, Whsize_wosize (wo_sz), i, ctx->flp[i],
                                  Next (ctx->flp[i]));
         goto update_flp;
       }
@@ -229,7 +229,7 @@ char *caml_fl_allocate (pctx ctx, mlsize_t wo_sz)
               fprintf (stderr, "FLP: extended to %d\n", ctx->flp_size);
             }
 #endif
-            result = allocate_block (Whsize_wosize (wo_sz), ctx->flp_size - 1, prev,
+            result = allocate_block (ctx, Whsize_wosize (wo_sz), ctx->flp_size - 1, prev,
                                      cur);
             goto update_flp;
           }
@@ -258,7 +258,7 @@ char *caml_fl_allocate (pctx ctx, mlsize_t wo_sz)
       if (sz < prevsz){
         ctx->beyond = cur;
       }else if (sz >= wo_sz){
-        return allocate_block (Whsize_wosize (wo_sz), ctx->flp_size, prev, cur);
+        return allocate_block (ctx, Whsize_wosize (wo_sz), ctx->flp_size, prev, cur);
       }
       prev = cur;
       cur = Next (prev);
@@ -368,14 +368,14 @@ void caml_fl_reset (pctx ctx)
     ctx->fl_prev = Fl_head;
     break;
   case Policy_first_fit:
-    truncate_flp (Fl_head);
+    truncate_flp (ctx, Fl_head);
     break;
   default:
     Assert (0);
     break;
   }
   ctx->caml_fl_cur_size = 0;
-  caml_fl_init_merge ();
+  caml_fl_init_merge (ctx);
 }
 
 /* [caml_fl_merge_block] returns the head pointer of the next block after [bp],
@@ -398,7 +398,7 @@ char *caml_fl_merge_block (pctx ctx, char *bp)
   Assert (prev < bp || prev == Fl_head);
   Assert (cur > bp || cur == NULL);
 
-  if (policy == Policy_first_fit) truncate_flp (prev);
+  if (policy == Policy_first_fit) truncate_flp (ctx, prev);
 
   /* If [last_fragment] and [bp] are adjacent, merge them. */
   if (ctx->last_fragment == Hp_bp (bp)){
@@ -500,7 +500,7 @@ void caml_fl_add_blocks (pctx ctx, char *bp)
     if (prev == ctx->caml_fl_merge && bp < ctx->caml_gc_sweep_hp){
       ctx->caml_fl_merge = (char *) Field (bp, 1);
     }
-    if (policy == Policy_first_fit) truncate_flp (bp);
+    if (policy == Policy_first_fit) truncate_flp (ctx, bp);
   }
 }
 
@@ -525,7 +525,7 @@ void caml_make_free_blocks (pctx ctx, value *p, mlsize_t size, int do_merge, int
       sz = size;
     }
     *(header_t *)p = Make_header (Wosize_whsize (sz), 0, color);
-    if (do_merge) caml_fl_merge_block (Bp_hp (p));
+    if (do_merge) caml_fl_merge_block (ctx, Bp_hp (p));
     size -= sz;
     p += sz;
   }

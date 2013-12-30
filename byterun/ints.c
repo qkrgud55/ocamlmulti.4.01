@@ -65,33 +65,33 @@ static intnat parse_intnat(pctx ctx, value s, int nbits)
   p = parse_sign_and_base(String_val(s), &base, &sign);
   threshold = ((uintnat) -1) / base;
   d = parse_digit(*p);
-  if (d < 0 || d >= base) caml_failwith("int_of_string");
+  if (d < 0 || d >= base) caml_failwith(ctx, "int_of_string");
   for (p++, res = d; /*nothing*/; p++) {
     char c = *p;
     if (c == '_') continue;
     d = parse_digit(c);
     if (d < 0 || d >= base) break;
     /* Detect overflow in multiplication base * res */
-    if (res > threshold) caml_failwith("int_of_string");
+    if (res > threshold) caml_failwith(ctx, "int_of_string");
     res = base * res + d;
     /* Detect overflow in addition (base * res) + d */
-    if (res < (uintnat) d) caml_failwith("int_of_string");
+    if (res < (uintnat) d) caml_failwith(ctx, "int_of_string");
   }
   if (p != String_val(s) + caml_string_length(s)){
-    caml_failwith("int_of_string");
+    caml_failwith(ctx, "int_of_string");
   }
   if (base == 10) {
     /* Signed representation expected, allow -2^(nbits-1) to 2^(nbits-1) - 1 */
     if (sign >= 0) {
-      if (res >= (uintnat)1 << (nbits - 1)) caml_failwith("int_of_string");
+      if (res >= (uintnat)1 << (nbits - 1)) caml_failwith(ctx, "int_of_string");
     } else {
-      if (res >  (uintnat)1 << (nbits - 1)) caml_failwith("int_of_string");
+      if (res >  (uintnat)1 << (nbits - 1)) caml_failwith(ctx, "int_of_string");
     }
   } else {
     /* Unsigned representation expected, allow 0 to 2^nbits - 1
        and tolerate -(2^nbits - 1) to 0 */
     if (nbits < sizeof(uintnat) * 8 && res >= (uintnat)1 << nbits)
-      caml_failwith("int_of_string");
+      caml_failwith(ctx, "int_of_string");
   }
   return sign < 0 ? -((intnat) res) : (intnat) res;
 }
@@ -137,7 +137,7 @@ CAMLprim value caml_int_compare(value v1, value v2)
 
 CAMLprim value caml_int_of_string(pctx ctx, value s)
 {
-  return Val_long(parse_intnat(s, 8 * sizeof(value) - 1));
+  return Val_long(parse_intnat(ctx, s, 8 * sizeof(value) - 1));
 }
 
 #define FORMAT_BUFFER_SIZE 32
@@ -158,7 +158,7 @@ static char * parse_format(pctx ctx, value fmt,
   len = caml_string_length(fmt);
   len_suffix = strlen(suffix);
   if (len + len_suffix + 1 >= FORMAT_BUFFER_SIZE)
-    caml_invalid_argument("format_int: format too long");
+    caml_invalid_argument(ctx, "format_int: format too long");
   memmove(format_string, String_val(fmt), len);
   p = format_string + len - 1;
   lastletter = *p;
@@ -179,7 +179,7 @@ static char * parse_format(pctx ctx, value fmt,
   if (prec < FORMAT_BUFFER_SIZE)
     return default_format_buffer;
   else
-    return caml_stat_alloc(prec + 1);
+    return caml_stat_alloc(ctx, prec + 1);
 }
 
 CAMLprim value caml_format_int(pctx ctx, value fmt, value arg)
@@ -190,7 +190,7 @@ CAMLprim value caml_format_int(pctx ctx, value fmt, value arg)
   char conv;
   value res;
 
-  buffer = parse_format(fmt, ARCH_INTNAT_PRINTF_FORMAT,
+  buffer = parse_format(ctx, fmt, ARCH_INTNAT_PRINTF_FORMAT,
                        format_string, default_format_buffer, &conv);
   switch (conv) {
   case 'u': case 'x': case 'X': case 'o':
@@ -200,7 +200,7 @@ CAMLprim value caml_format_int(pctx ctx, value fmt, value arg)
     sprintf(buffer, format_string, Long_val(arg));
     break;
   }
-  res = caml_copy_string(buffer);
+  res = caml_copy_string(ctx, buffer);
   if (buffer != default_format_buffer) caml_stat_free(buffer);
   return res;
 }
@@ -244,35 +244,35 @@ CAMLexport struct custom_operations caml_int32_ops = {
 
 CAMLexport value caml_copy_int32(pctx ctx, int32 i)
 {
-  value res = caml_alloc_custom(&caml_int32_ops, 4, 0, 1);
+  value res = caml_alloc_custom(ctx, &caml_int32_ops, 4, 0, 1);
   Int32_val(res) = i;
   return res;
 }
 
 CAMLprim value caml_int32_neg(pctx ctx, value v)
-{ return caml_copy_int32(- Int32_val(v)); }
+{ return caml_copy_int32(ctx, - Int32_val(v)); }
 
 CAMLprim value caml_int32_add(pctx ctx, value v1, value v2)
-{ return caml_copy_int32(Int32_val(v1) + Int32_val(v2)); }
+{ return caml_copy_int32(ctx, Int32_val(v1) + Int32_val(v2)); }
 
 CAMLprim value caml_int32_sub(pctx ctx, value v1, value v2)
-{ return caml_copy_int32(Int32_val(v1) - Int32_val(v2)); }
+{ return caml_copy_int32(ctx, Int32_val(v1) - Int32_val(v2)); }
 
 CAMLprim value caml_int32_mul(pctx ctx, value v1, value v2)
-{ return caml_copy_int32(Int32_val(v1) * Int32_val(v2)); }
+{ return caml_copy_int32(ctx, Int32_val(v1) * Int32_val(v2)); }
 
 CAMLprim value caml_int32_div(pctx ctx, value v1, value v2)
 {
   int32 dividend = Int32_val(v1);
   int32 divisor = Int32_val(v2);
-  if (divisor == 0) caml_raise_zero_divide();
+  if (divisor == 0) caml_raise_zero_divide(ctx);
   /* PR#4740: on some processors, division crashes on overflow.
      Implement the same behavior as for type "int". */
   if (dividend == (1<<31) && divisor == -1) return v1;
 #ifdef NONSTANDARD_DIV_MOD
-  return caml_copy_int32(caml_safe_div(dividend, divisor));
+  return caml_copy_int32(ctx, caml_safe_div(dividend, divisor));
 #else
-  return caml_copy_int32(dividend / divisor);
+  return caml_copy_int32(ctx, dividend / divisor);
 #endif
 }
 
@@ -280,34 +280,34 @@ CAMLprim value caml_int32_mod(pctx ctx, value v1, value v2)
 {
   int32 dividend = Int32_val(v1);
   int32 divisor = Int32_val(v2);
-  if (divisor == 0) caml_raise_zero_divide();
+  if (divisor == 0) caml_raise_zero_divide(ctx);
   /* PR#4740: on some processors, modulus crashes if division overflows.
      Implement the same behavior as for type "int". */
-  if (dividend == (1<<31) && divisor == -1) return caml_copy_int32(0);
+  if (dividend == (1<<31) && divisor == -1) return caml_copy_int32(ctx, 0);
 #ifdef NONSTANDARD_DIV_MOD
-  return caml_copy_int32(caml_safe_mod(dividend, divisor));
+  return caml_copy_int32(ctx, caml_safe_mod(dividend, divisor));
 #else
-  return caml_copy_int32(dividend % divisor);
+  return caml_copy_int32(ctx, dividend % divisor);
 #endif
 }
 
 CAMLprim value caml_int32_and(pctx ctx, value v1, value v2)
-{ return caml_copy_int32(Int32_val(v1) & Int32_val(v2)); }
+{ return caml_copy_int32(ctx, Int32_val(v1) & Int32_val(v2)); }
 
 CAMLprim value caml_int32_or(pctx ctx, value v1, value v2)
-{ return caml_copy_int32(Int32_val(v1) | Int32_val(v2)); }
+{ return caml_copy_int32(ctx, Int32_val(v1) | Int32_val(v2)); }
 
 CAMLprim value caml_int32_xor(pctx ctx, value v1, value v2)
-{ return caml_copy_int32(Int32_val(v1) ^ Int32_val(v2)); }
+{ return caml_copy_int32(ctx, Int32_val(v1) ^ Int32_val(v2)); }
 
 CAMLprim value caml_int32_shift_left(pctx ctx, value v1, value v2)
-{ return caml_copy_int32(Int32_val(v1) << Int_val(v2)); }
+{ return caml_copy_int32(ctx, Int32_val(v1) << Int_val(v2)); }
 
 CAMLprim value caml_int32_shift_right(pctx ctx, value v1, value v2)
-{ return caml_copy_int32(Int32_val(v1) >> Int_val(v2)); }
+{ return caml_copy_int32(ctx, Int32_val(v1) >> Int_val(v2)); }
 
 CAMLprim value caml_int32_shift_right_unsigned(pctx ctx, value v1, value v2)
-{ return caml_copy_int32((uint32)Int32_val(v1) >> Int_val(v2)); }
+{ return caml_copy_int32(ctx, (uint32)Int32_val(v1) >> Int_val(v2)); }
 
 static int32 caml_swap32(int32 x)
 {
@@ -321,19 +321,19 @@ value caml_int32_direct_bswap(value v)
 { return caml_swap32(v); }
 
 CAMLprim value caml_int32_bswap(value v)
-{ return caml_copy_int32(caml_swap32(Int32_val(v))); }
+{ return caml_copy_int32(ctx, caml_swap32(Int32_val(v))); }
 
 CAMLprim value caml_int32_of_int(pctx ctx, value v)
-{ return caml_copy_int32(Long_val(v)); }
+{ return caml_copy_int32(ctx, Long_val(v)); }
 
 CAMLprim value caml_int32_to_int(pctx ctx, value v)
 { return Val_long(Int32_val(v)); }
 
 CAMLprim value caml_int32_of_float(pctx ctx, value v)
-{ return caml_copy_int32((int32)(Double_val(v))); }
+{ return caml_copy_int32(ctx, (int32)(Double_val(v))); }
 
 CAMLprim value caml_int32_to_float(pctx ctx, value v)
-{ return caml_copy_double((double)(Int32_val(v))); }
+{ return caml_copy_double(ctx, (double)(Int32_val(v))); }
 
 CAMLprim value caml_int32_compare(value v1, value v2)
 {
@@ -351,31 +351,31 @@ CAMLprim value caml_int32_format(pctx ctx, value fmt, value arg)
   char conv;
   value res;
 
-  buffer = parse_format(fmt, ARCH_INT32_PRINTF_FORMAT,
+  buffer = parse_format(ctx, fmt, ARCH_INT32_PRINTF_FORMAT,
                         format_string, default_format_buffer, &conv);
   sprintf(buffer, format_string, Int32_val(arg));
-  res = caml_copy_string(buffer);
+  res = caml_copy_string(ctx, buffer);
   if (buffer != default_format_buffer) caml_stat_free(buffer);
   return res;
 }
 
 CAMLprim value caml_int32_of_string(pctx ctx, value s)
 {
-  return caml_copy_int32(parse_intnat(s, 32));
+  return caml_copy_int32(ctx, parse_intnat(ctx, s, 32));
 }
 
 CAMLprim value caml_int32_bits_of_float(pctx ctx, value vd)
 {
   union { float d; int32 i; } u;
   u.d = Double_val(vd);
-  return caml_copy_int32(u.i);
+  return caml_copy_int32(ctx, u.i);
 }
 
 CAMLprim value caml_int32_float_of_bits(pctx ctx, value vi)
 {
   union { float d; int32 i; } u;
   u.i = Int32_val(vi);
-  return caml_copy_double(u.d);
+  return caml_copy_double(ctx, u.d);
 }
 
 /* 64-bit integers */
@@ -446,7 +446,7 @@ CAMLexport struct custom_operations caml_int64_ops = {
 
 CAMLexport value caml_copy_int64(pctx ctx, int64 i)
 {
-  value res = caml_alloc_custom(&caml_int64_ops, 8, 0, 1);
+  value res = caml_alloc_custom(ctx, &caml_int64_ops, 8, 0, 1);
 #ifndef ARCH_ALIGN_INT64
   Int64_val(res) = i;
 #else
@@ -459,59 +459,59 @@ CAMLexport value caml_copy_int64(pctx ctx, int64 i)
 }
 
 CAMLprim value caml_int64_neg(pctx ctx, value v)
-{ return caml_copy_int64(I64_neg(Int64_val(v))); }
+{ return caml_copy_int64(ctx, I64_neg(Int64_val(v))); }
 
 CAMLprim value caml_int64_add(pctx ctx, value v1, value v2)
-{ return caml_copy_int64(I64_add(Int64_val(v1), Int64_val(v2))); }
+{ return caml_copy_int64(ctx, I64_add(Int64_val(v1), Int64_val(v2))); }
 
 CAMLprim value caml_int64_sub(pctx ctx, value v1, value v2)
-{ return caml_copy_int64(I64_sub(Int64_val(v1), Int64_val(v2))); }
+{ return caml_copy_int64(ctx, I64_sub(Int64_val(v1), Int64_val(v2))); }
 
 CAMLprim value caml_int64_mul(pctx ctx, value v1, value v2)
-{ return caml_copy_int64(I64_mul(Int64_val(v1), Int64_val(v2))); }
+{ return caml_copy_int64(ctx, I64_mul(Int64_val(v1), Int64_val(v2))); }
 
 CAMLprim value caml_int64_div(pctx ctx, value v1, value v2)
 {
   int64 dividend = Int64_val(v1);
   int64 divisor = Int64_val(v2);
-  if (I64_is_zero(divisor)) caml_raise_zero_divide();
+  if (I64_is_zero(divisor)) caml_raise_zero_divide(ctx);
   /* PR#4740: on some processors, division crashes on overflow.
      Implement the same behavior as for type "int". */
   if (I64_is_min_int(dividend) && I64_is_minus_one(divisor)) return v1;
-  return caml_copy_int64(I64_div(Int64_val(v1), divisor));
+  return caml_copy_int64(ctx, I64_div(Int64_val(v1), divisor));
 }
 
 CAMLprim value caml_int64_mod(pctx ctx, value v1, value v2)
 {
   int64 dividend = Int64_val(v1);
   int64 divisor = Int64_val(v2);
-  if (I64_is_zero(divisor)) caml_raise_zero_divide();
+  if (I64_is_zero(divisor)) caml_raise_zero_divide(ctx);
   /* PR#4740: on some processors, division crashes on overflow.
      Implement the same behavior as for type "int". */
   if (I64_is_min_int(dividend) && I64_is_minus_one(divisor)) {
     int64 zero = I64_literal(0,0);
-    return caml_copy_int64(zero);
+    return caml_copy_int64(ctx, zero);
   }
-  return caml_copy_int64(I64_mod(Int64_val(v1), divisor));
+  return caml_copy_int64(ctx, I64_mod(Int64_val(v1), divisor));
 }
 
 CAMLprim value caml_int64_and(pctx ctx, value v1, value v2)
-{ return caml_copy_int64(I64_and(Int64_val(v1), Int64_val(v2))); }
+{ return caml_copy_int64(ctx, I64_and(Int64_val(v1), Int64_val(v2))); }
 
 CAMLprim value caml_int64_or(pctx ctx, value v1, value v2)
-{ return caml_copy_int64(I64_or(Int64_val(v1), Int64_val(v2))); }
+{ return caml_copy_int64(ctx, I64_or(Int64_val(v1), Int64_val(v2))); }
 
 CAMLprim value caml_int64_xor(pctx ctx, value v1, value v2)
-{ return caml_copy_int64(I64_xor(Int64_val(v1), Int64_val(v2))); }
+{ return caml_copy_int64(ctx, I64_xor(Int64_val(v1), Int64_val(v2))); }
 
 CAMLprim value caml_int64_shift_left(pctx ctx, value v1, value v2)
-{ return caml_copy_int64(I64_lsl(Int64_val(v1), Int_val(v2))); }
+{ return caml_copy_int64(ctx, I64_lsl(Int64_val(v1), Int_val(v2))); }
 
 CAMLprim value caml_int64_shift_right(pctx ctx, value v1, value v2)
-{ return caml_copy_int64(I64_asr(Int64_val(v1), Int_val(v2))); }
+{ return caml_copy_int64(ctx, I64_asr(Int64_val(v1), Int_val(v2))); }
 
 CAMLprim value caml_int64_shift_right_unsigned(pctx ctx, value v1, value v2)
-{ return caml_copy_int64(I64_lsr(Int64_val(v1), Int_val(v2))); }
+{ return caml_copy_int64(ctx, I64_lsr(Int64_val(v1), Int_val(v2))); }
 
 #ifdef ARCH_SIXTYFOUR
 static value caml_swap64(value x)
@@ -531,34 +531,34 @@ value caml_int64_direct_bswap(value v)
 #endif
 
 CAMLprim value caml_int64_bswap(value v)
-{ return caml_copy_int64(I64_bswap(Int64_val(v))); }
+{ return caml_copy_int64(ctx, I64_bswap(Int64_val(v))); }
 
 CAMLprim value caml_int64_of_int(pctx ctx, value v)
-{ return caml_copy_int64(I64_of_intnat(Long_val(v))); }
+{ return caml_copy_int64(ctx, I64_of_intnat(Long_val(v))); }
 
 CAMLprim value caml_int64_to_int(pctx ctx, value v)
 { return Val_long(I64_to_intnat(Int64_val(v))); }
 
 CAMLprim value caml_int64_of_float(pctx ctx, value v)
-{ return caml_copy_int64(I64_of_double(Double_val(v))); }
+{ return caml_copy_int64(ctx, I64_of_double(Double_val(v))); }
 
 CAMLprim value caml_int64_to_float(pctx ctx, value v)
 {
   int64 i = Int64_val(v);
-  return caml_copy_double(I64_to_double(i));
+  return caml_copy_double(ctx, I64_to_double(i));
 }
 
 CAMLprim value caml_int64_of_int32(pctx ctx, value v)
-{ return caml_copy_int64(I64_of_int32(Int32_val(v))); }
+{ return caml_copy_int64(ctx, I64_of_int32(Int32_val(v))); }
 
 CAMLprim value caml_int64_to_int32(pctx ctx, value v)
-{ return caml_copy_int32(I64_to_int32(Int64_val(v))); }
+{ return caml_copy_int32(ctx, I64_to_int32(Int64_val(v))); }
 
 CAMLprim value caml_int64_of_nativeint(pctx ctx, value v)
-{ return caml_copy_int64(I64_of_intnat(Nativeint_val(v))); }
+{ return caml_copy_int64(ctx, I64_of_intnat(Nativeint_val(v))); }
 
 CAMLprim value caml_int64_to_nativeint(pctx ctx, value v)
-{ return caml_copy_nativeint(I64_to_intnat(Int64_val(v))); }
+{ return caml_copy_nativeint(ctx, I64_to_intnat(Int64_val(v))); }
 
 CAMLprim value caml_int64_compare(value v1, value v2)
 {
@@ -582,10 +582,10 @@ CAMLprim value caml_int64_format(pctx ctx, value fmt, value arg)
   char conv;
   value res;
 
-  buffer = parse_format(fmt, ARCH_INT64_PRINTF_FORMAT,
+  buffer = parse_format(ctx, fmt, ARCH_INT64_PRINTF_FORMAT,
                         format_string, default_format_buffer, &conv);
   I64_format(buffer, format_string, Int64_val(arg));
-  res = caml_copy_string(buffer);
+  res = caml_copy_string(ctx, buffer);
   if (buffer != default_format_buffer) caml_stat_free(buffer);
   return res;
 }
@@ -602,7 +602,7 @@ CAMLprim value caml_int64_of_string(pctx ctx, value s)
   p = parse_sign_and_base(String_val(s), &base, &sign);
   I64_udivmod(max_uint64, I64_of_int32(base), &threshold, &res);
   d = parse_digit(*p);
-  if (d < 0 || d >= base) caml_failwith("int_of_string");
+  if (d < 0 || d >= base) caml_failwith(ctx, "int_of_string");
   res = I64_of_int32(d);
   for (p++; /*nothing*/; p++) {
     char c = *p;
@@ -610,20 +610,20 @@ CAMLprim value caml_int64_of_string(pctx ctx, value s)
     d = parse_digit(c);
     if (d < 0 || d >= base) break;
     /* Detect overflow in multiplication base * res */
-    if (I64_ult(threshold, res)) caml_failwith("int_of_string");
+    if (I64_ult(threshold, res)) caml_failwith(ctx, "int_of_string");
     res = I64_add(I64_mul(I64_of_int32(base), res), I64_of_int32(d));
     /* Detect overflow in addition (base * res) + d */
-    if (I64_ult(res, I64_of_int32(d))) caml_failwith("int_of_string");
+    if (I64_ult(res, I64_of_int32(d))) caml_failwith(ctx, "int_of_string");
   }
   if (p != String_val(s) + caml_string_length(s)){
-    caml_failwith("int_of_string");
+    caml_failwith(ctx, "int_of_string");
   }
   if (base == 10) {
     if (I64_ult((sign >= 0 ? max_int64_pos : max_int64_neg), res))
-      caml_failwith("int_of_string");
+      caml_failwith(ctx, "int_of_string");
   }
   if (sign < 0) res = I64_neg(res);
-  return caml_copy_int64(res);
+  return caml_copy_int64(ctx, res);
 }
 
 CAMLprim value caml_int64_bits_of_float(pctx ctx, value vd)
@@ -633,7 +633,7 @@ CAMLprim value caml_int64_bits_of_float(pctx ctx, value vd)
 #if defined(__arm__) && !defined(__ARM_EABI__)
   { int32 t = u.h[0]; u.h[0] = u.h[1]; u.h[1] = t; }
 #endif
-  return caml_copy_int64(u.i);
+  return caml_copy_int64(ctx, u.i);
 }
 
 CAMLprim value caml_int64_float_of_bits(pctx ctx, value vi)
@@ -643,7 +643,7 @@ CAMLprim value caml_int64_float_of_bits(pctx ctx, value vi)
 #if defined(__arm__) && !defined(__ARM_EABI__)
   { int32 t = u.h[0]; u.h[0] = u.h[1]; u.h[1] = t; }
 #endif
-  return caml_copy_double(u.d);
+  return caml_copy_double(ctx, u.d);
 }
 
 /* Native integers */
@@ -718,22 +718,22 @@ CAMLexport struct custom_operations caml_nativeint_ops = {
 
 CAMLexport value caml_copy_nativeint(pctx ctx, intnat i)
 {
-  value res = caml_alloc_custom(&caml_nativeint_ops, sizeof(intnat), 0, 1);
+  value res = caml_alloc_custom(ctx, &caml_nativeint_ops, sizeof(intnat), 0, 1);
   Nativeint_val(res) = i;
   return res;
 }
 
 CAMLprim value caml_nativeint_neg(pctx ctx, value v)
-{ return caml_copy_nativeint(- Nativeint_val(v)); }
+{ return caml_copy_nativeint(ctx, - Nativeint_val(v)); }
 
 CAMLprim value caml_nativeint_add(pctx ctx, value v1, value v2)
-{ return caml_copy_nativeint(Nativeint_val(v1) + Nativeint_val(v2)); }
+{ return caml_copy_nativeint(ctx, Nativeint_val(v1) + Nativeint_val(v2)); }
 
 CAMLprim value caml_nativeint_sub(pctx ctx, value v1, value v2)
-{ return caml_copy_nativeint(Nativeint_val(v1) - Nativeint_val(v2)); }
+{ return caml_copy_nativeint(ctx, Nativeint_val(v1) - Nativeint_val(v2)); }
 
 CAMLprim value caml_nativeint_mul(pctx ctx, value v1, value v2)
-{ return caml_copy_nativeint(Nativeint_val(v1) * Nativeint_val(v2)); }
+{ return caml_copy_nativeint(ctx, Nativeint_val(v1) * Nativeint_val(v2)); }
 
 #define Nativeint_min_int ((intnat) 1 << (sizeof(intnat) * 8 - 1))
 
@@ -741,14 +741,14 @@ CAMLprim value caml_nativeint_div(pctx ctx, value v1, value v2)
 {
   intnat dividend = Nativeint_val(v1);
   intnat divisor = Nativeint_val(v2);
-  if (divisor == 0) caml_raise_zero_divide();
+  if (divisor == 0) caml_raise_zero_divide(ctx);
   /* PR#4740: on some processors, modulus crashes if division overflows.
      Implement the same behavior as for type "int". */
   if (dividend == Nativeint_min_int && divisor == -1) return v1;
 #ifdef NONSTANDARD_DIV_MOD
-  return caml_copy_nativeint(caml_safe_div(dividend, divisor));
+  return caml_copy_nativeint(ctx, caml_safe_div(dividend, divisor));
 #else
-  return caml_copy_nativeint(dividend / divisor);
+  return caml_copy_nativeint(ctx, dividend / divisor);
 #endif
 }
 
@@ -756,36 +756,36 @@ CAMLprim value caml_nativeint_mod(pctx ctx, value v1, value v2)
 {
   intnat dividend = Nativeint_val(v1);
   intnat divisor = Nativeint_val(v2);
-  if (divisor == 0) caml_raise_zero_divide();
+  if (divisor == 0) caml_raise_zero_divide(ctx);
   /* PR#4740: on some processors, modulus crashes if division overflows.
      Implement the same behavior as for type "int". */
   if (dividend == Nativeint_min_int && divisor == -1){
-    return caml_copy_nativeint(0);
+    return caml_copy_nativeint(ctx, 0);
   }
 #ifdef NONSTANDARD_DIV_MOD
-  return caml_copy_nativeint(caml_safe_mod(dividend, divisor));
+  return caml_copy_nativeint(ctx, caml_safe_mod(dividend, divisor));
 #else
-  return caml_copy_nativeint(dividend % divisor);
+  return caml_copy_nativeint(ctx, dividend % divisor);
 #endif
 }
 
 CAMLprim value caml_nativeint_and(pctx ctx, value v1, value v2)
-{ return caml_copy_nativeint(Nativeint_val(v1) & Nativeint_val(v2)); }
+{ return caml_copy_nativeint(ctx, Nativeint_val(v1) & Nativeint_val(v2)); }
 
 CAMLprim value caml_nativeint_or(pctx ctx, value v1, value v2)
-{ return caml_copy_nativeint(Nativeint_val(v1) | Nativeint_val(v2)); }
+{ return caml_copy_nativeint(ctx, Nativeint_val(v1) | Nativeint_val(v2)); }
 
 CAMLprim value caml_nativeint_xor(pctx ctx, value v1, value v2)
-{ return caml_copy_nativeint(Nativeint_val(v1) ^ Nativeint_val(v2)); }
+{ return caml_copy_nativeint(ctx, Nativeint_val(v1) ^ Nativeint_val(v2)); }
 
 CAMLprim value caml_nativeint_shift_left(pctx ctx, value v1, value v2)
-{ return caml_copy_nativeint(Nativeint_val(v1) << Int_val(v2)); }
+{ return caml_copy_nativeint(ctx, Nativeint_val(v1) << Int_val(v2)); }
 
 CAMLprim value caml_nativeint_shift_right(pctx ctx, value v1, value v2)
-{ return caml_copy_nativeint(Nativeint_val(v1) >> Int_val(v2)); }
+{ return caml_copy_nativeint(ctx, Nativeint_val(v1) >> Int_val(v2)); }
 
 CAMLprim value caml_nativeint_shift_right_unsigned(pctx ctx, value v1, value v2)
-{ return caml_copy_nativeint((uintnat)Nativeint_val(v1) >> Int_val(v2)); }
+{ return caml_copy_nativeint(ctx, (uintnat)Nativeint_val(v1) >> Int_val(v2)); }
 
 value caml_nativeint_direct_bswap(value v)
 {
@@ -799,29 +799,29 @@ value caml_nativeint_direct_bswap(value v)
 CAMLprim value caml_nativeint_bswap(value v)
 {
 #ifdef ARCH_SIXTYFOUR
-  return caml_copy_nativeint(caml_swap64(Nativeint_val(v)));
+  return caml_copy_nativeint(ctx, caml_swap64(Nativeint_val(v)));
 #else
-  return caml_copy_nativeint(caml_swap32(Nativeint_val(v)));
+  return caml_copy_nativeint(ctx, caml_swap32(Nativeint_val(v)));
 #endif
 }
 
 CAMLprim value caml_nativeint_of_int(pctx ctx, value v)
-{ return caml_copy_nativeint(Long_val(v)); }
+{ return caml_copy_nativeint(ctx, Long_val(v)); }
 
 CAMLprim value caml_nativeint_to_int(pctx ctx, value v)
 { return Val_long(Nativeint_val(v)); }
 
 CAMLprim value caml_nativeint_of_float(pctx ctx, value v)
-{ return caml_copy_nativeint((intnat)(Double_val(v))); }
+{ return caml_copy_nativeint(ctx, (intnat)(Double_val(v))); }
 
 CAMLprim value caml_nativeint_to_float(pctx ctx, value v)
-{ return caml_copy_double((double)(Nativeint_val(v))); }
+{ return caml_copy_double(ctx, (double)(Nativeint_val(v))); }
 
 CAMLprim value caml_nativeint_of_int32(pctx ctx, value v)
-{ return caml_copy_nativeint(Int32_val(v)); }
+{ return caml_copy_nativeint(ctx, Int32_val(v)); }
 
 CAMLprim value caml_nativeint_to_int32(pctx ctx, value v)
-{ return caml_copy_int32(Nativeint_val(v)); }
+{ return caml_copy_int32(ctx, Nativeint_val(v)); }
 
 CAMLprim value caml_nativeint_compare(pctx ctx, value v1, value v2)
 {
@@ -839,15 +839,15 @@ CAMLprim value caml_nativeint_format(pctx ctx, value fmt, value arg)
   char conv;
   value res;
 
-  buffer = parse_format(fmt, ARCH_INTNAT_PRINTF_FORMAT,
+  buffer = parse_format(ctx, fmt, ARCH_INTNAT_PRINTF_FORMAT,
                         format_string, default_format_buffer, &conv);
   sprintf(buffer, format_string, Nativeint_val(arg));
-  res = caml_copy_string(buffer);
+  res = caml_copy_string(ctx, buffer);
   if (buffer != default_format_buffer) caml_stat_free(buffer);
   return res;
 }
 
 CAMLprim value caml_nativeint_of_string(pctx ctx, value s)
 {
-  return caml_copy_nativeint(parse_intnat(s, 8 * sizeof(value)));
+  return caml_copy_nativeint(ctx, parse_intnat(ctx, s, 8 * sizeof(value)));
 }

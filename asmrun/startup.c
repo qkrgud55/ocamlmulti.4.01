@@ -75,7 +75,7 @@ static void init_atoms(void)
       caml_code_area_end = caml_code_segments[i].end;
   }
   /* Register the code in the table of code fragments */
-  cf = caml_stat_alloc(sizeof(struct code_fragment));
+  cf = caml_stat_alloc(ctx, sizeof(struct code_fragment));
   cf->code_start = caml_code_area_start;
   cf->code_end = caml_code_area_end;
   cf->digest_computed = 0;
@@ -132,9 +132,9 @@ static void parse_camlrunparam(void)
       case 'o': scanmult (opt, &percent_free_init); break;
       case 'O': scanmult (opt, &max_percent_free_init); break;
       case 'v': scanmult (opt, &caml_verb_gc); break;
-      case 'b': caml_record_backtrace(Val_true); break;
+      case 'b': caml_record_backtrace(ctx, Val_true); break;
       case 'p': caml_parser_trace = 1; break;
-      case 'a': scanmult (opt, &p); caml_set_allocation_policy (p); break;
+      case 'a': scanmult (opt, &p); caml_set_allocation_policy (ctx, p); break;
       }
     }
   }
@@ -170,16 +170,16 @@ void caml_main(char **argv)
 #ifdef _MSC_VER
   caml_install_invalid_parameter_handler();
 #endif
-  caml_init_custom_operations();
+  caml_init_custom_operations(ctx);
 #ifdef DEBUG
   caml_verb_gc = 63;
 #endif
   caml_top_of_stack = &tos;
   parse_camlrunparam();
-  caml_init_gc (minor_heap_init, heap_size_init, heap_chunk_init,
+  caml_init_gc (ctx, minor_heap_init, heap_size_init, heap_chunk_init,
                 percent_free_init, max_percent_free_init);
   init_atoms();
-  caml_init_signals();
+  caml_init_signals(ctx);
   caml_debugger_init (); /* force debugger.o stub to be linked */
   exe_name = argv[0];
   if (exe_name == NULL) exe_name = "";
@@ -198,7 +198,7 @@ void caml_main(char **argv)
   }
   res = caml_start_program_r(0x0);
   if (Is_exception_result(res))
-    caml_fatal_uncaught_exception(Extract_exception(res));
+    caml_fatal_uncaught_exception(ctx, Extract_exception(res));
 }
 
 void caml_startup(char **argv)

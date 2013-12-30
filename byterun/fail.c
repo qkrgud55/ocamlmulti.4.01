@@ -33,55 +33,55 @@ CAMLexport void caml_raise(pctx ctx, value v)
 {
   Unlock_exn();
   caml_exn_bucket = v;
-  if (caml_external_raise == NULL) caml_fatal_uncaught_exception(v);
+  if (caml_external_raise == NULL) caml_fatal_uncaught_exception(ctx, v);
   siglongjmp(caml_external_raise->buf, 1);
 }
 
 CAMLexport void caml_raise_constant(pctx ctx, value tag)
 {
-  CAMLparam1 (tag);
-  CAMLlocal1 (bucket);
+  CAMLparam1 (ctx, tag);
+  CAMLlocal1 (ctx, bucket);
 
-  bucket = caml_alloc_small (1, 0);
+  bucket = caml_alloc_small (ctx, 1, 0);
   Field(bucket, 0) = tag;
-  caml_raise(bucket);
+  caml_raise(ctx, bucket);
   CAMLnoreturn;
 }
 
 CAMLexport void caml_raise_with_arg(pctx ctx, value tag, value arg)
 {
-  CAMLparam2 (tag, arg);
-  CAMLlocal1 (bucket);
+  CAMLparam2 (ctx, tag, arg);
+  CAMLlocal1 (ctx, bucket);
 
-  bucket = caml_alloc_small (2, 0);
+  bucket = caml_alloc_small (ctx, 2, 0);
   Field(bucket, 0) = tag;
   Field(bucket, 1) = arg;
-  caml_raise(bucket);
+  caml_raise(ctx, bucket);
   CAMLnoreturn;
 }
 
 CAMLexport void caml_raise_with_args(pctx ctx, value tag, int nargs, value args[])
 {
-  CAMLparam1 (tag);
-  CAMLxparamN (args, nargs);
+  CAMLparam1 (ctx, tag);
+  CAMLxparamN (ctx, args, nargs);
   value bucket;
   int i;
 
   Assert(1 + nargs <= Max_young_wosize);
-  bucket = caml_alloc_small (1 + nargs, 0);
+  bucket = caml_alloc_small (ctx, 1 + nargs, 0);
   Field(bucket, 0) = tag;
   for (i = 0; i < nargs; i++) Field(bucket, 1 + i) = args[i];
-  caml_raise(bucket);
+  caml_raise(ctx, bucket);
   CAMLnoreturn;
 }
 
 CAMLexport void caml_raise_with_string(pctx ctx, value tag, char const *msg)
 {
-  CAMLparam1 (tag);
-  CAMLlocal1 (vmsg);
+  CAMLparam1 (ctx, tag);
+  CAMLlocal1 (ctx, vmsg);
 
-  vmsg = caml_copy_string(msg);
-  caml_raise_with_arg(tag, vmsg);
+  vmsg = caml_copy_string(ctx, msg);
+  caml_raise_with_arg(ctx, tag, vmsg);
   CAMLnoreturn;
 }
 
@@ -94,7 +94,7 @@ CAMLexport void caml_failwith (pctx ctx, char const *msg)
     fprintf(stderr, "Fatal error: exception Failure(\"%s\")\n", msg);
     exit(2);
   }
-  caml_raise_with_string(Field(caml_global_data, FAILURE_EXN), msg);
+  caml_raise_with_string(ctx, Field(caml_global_data, FAILURE_EXN), msg);
 }
 
 CAMLexport void caml_invalid_argument (pctx ctx, char const *msg)
@@ -103,12 +103,12 @@ CAMLexport void caml_invalid_argument (pctx ctx, char const *msg)
     fprintf(stderr, "Fatal error: exception Invalid_argument(\"%s\")\n", msg);
     exit(2);
   }
-  caml_raise_with_string(Field(caml_global_data, INVALID_EXN), msg);
+  caml_raise_with_string(ctx, Field(caml_global_data, INVALID_EXN), msg);
 }
 
 CAMLexport void caml_array_bound_error(pctx ctx)
 {
-  caml_invalid_argument("index out of bounds");
+  caml_invalid_argument(ctx, "index out of bounds");
 }
 
 /* Problem: we can't use [caml_raise_constant], because it allocates and
@@ -125,37 +125,37 @@ CAMLexport void caml_raise_out_of_memory(pctx ctx)
   if (out_of_memory_bucket.exn == 0)
     caml_fatal_error
       ("Fatal error: out of memory while raising Out_of_memory\n");
-  caml_raise((value) &(out_of_memory_bucket.exn));
+  caml_raise(ctx, (value) &(out_of_memory_bucket.exn));
 }
 
 CAMLexport void caml_raise_stack_overflow(pctx ctx)
 {
-  caml_raise_constant(Field(caml_global_data, STACK_OVERFLOW_EXN));
+  caml_raise_constant(ctx, Field(caml_global_data, STACK_OVERFLOW_EXN));
 }
 
 CAMLexport void caml_raise_sys_error(pctx ctx, value msg)
 {
-  caml_raise_with_arg(Field(caml_global_data, SYS_ERROR_EXN), msg);
+  caml_raise_with_arg(ctx, Field(caml_global_data, SYS_ERROR_EXN), msg);
 }
 
 CAMLexport void caml_raise_end_of_file(pctx ctx)
 {
-  caml_raise_constant(Field(caml_global_data, END_OF_FILE_EXN));
+  caml_raise_constant(ctx, Field(caml_global_data, END_OF_FILE_EXN));
 }
 
 CAMLexport void caml_raise_zero_divide(pctx ctx)
 {
-  caml_raise_constant(Field(caml_global_data, ZERO_DIVIDE_EXN));
+  caml_raise_constant(ctx, Field(caml_global_data, ZERO_DIVIDE_EXN));
 }
 
 CAMLexport void caml_raise_not_found(pctx ctx)
 {
-  caml_raise_constant(Field(caml_global_data, NOT_FOUND_EXN));
+  caml_raise_constant(ctx, Field(caml_global_data, NOT_FOUND_EXN));
 }
 
 CAMLexport void caml_raise_sys_blocked_io(pctx ctx)
 {
-  caml_raise_constant(Field(caml_global_data, SYS_BLOCKED_IO));
+  caml_raise_constant(ctx, Field(caml_global_data, SYS_BLOCKED_IO));
 }
 
 /* Initialization of statically-allocated exception buckets */
@@ -164,7 +164,7 @@ void caml_init_exceptions(void)
 {
   out_of_memory_bucket.hdr = Make_header(1, 0, Caml_white);
   out_of_memory_bucket.exn = Field(caml_global_data, OUT_OF_MEMORY_EXN);
-  caml_register_global_root(&out_of_memory_bucket.exn);
+  caml_register_global_root(ctx, &out_of_memory_bucket.exn);
 }
 
 int caml_is_special_exception(value exn) {

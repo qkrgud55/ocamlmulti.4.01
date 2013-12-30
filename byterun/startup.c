@@ -140,7 +140,7 @@ void caml_read_section_descriptors(int fd, struct exec_trailer *trail)
   int toc_size, i;
 
   toc_size = trail->num_sections * 8;
-  trail->section = caml_stat_alloc(toc_size);
+  trail->section = caml_stat_alloc(ctx, toc_size);
   lseek(fd, - (long) (TRAILER_SIZE + toc_size), SEEK_END);
   if (read(fd, (char *) trail->section, toc_size) != toc_size)
     caml_fatal_error("Fatal error: cannot read section table\n");
@@ -190,7 +190,7 @@ static char * read_section(int fd, struct exec_trailer *trail, char *name)
 
   len = caml_seek_optional_section(fd, trail, name);
   if (len == -1) return NULL;
-  data = caml_stat_alloc(len + 1);
+  data = caml_stat_alloc(ctx, len + 1);
   if (read(fd, data, len) != len)
     caml_fatal_error_arg("Fatal error: error reading section %s\n", name);
   data[len] = 0;
@@ -261,7 +261,7 @@ static int parse_command_line(char **argv)
       exit(0);
       break;
     case 'b':
-      caml_record_backtrace(Val_true);
+      caml_record_backtrace(ctx, Val_true);
       break;
     case 'I':
       if (argv[i + 1] != NULL) {
@@ -308,8 +308,8 @@ static void parse_camlrunparam(void)
   if (opt != NULL){
     while (*opt != '\0'){
       switch (*opt++){
-      case 'a': scanmult (opt, &p); caml_set_allocation_policy (p); break;
-      case 'b': caml_record_backtrace(Val_true); break;
+      case 'a': scanmult (opt, &p); caml_set_allocation_policy (ctx, p); break;
+      case 'b': caml_record_backtrace(ctx, Val_true); break;
       case 'h': scanmult (opt, &heap_size_init); break;
       case 'i': scanmult (opt, &heap_chunk_init); break;
       case 'l': scanmult (opt, &max_stack_init); break;
@@ -360,7 +360,7 @@ CAMLexport void caml_main(char **argv)
 #ifdef _MSC_VER
   caml_install_invalid_parameter_handler();
 #endif
-  caml_init_custom_operations();
+  caml_init_custom_operations(ctx);
   caml_ext_table_init(&caml_shared_libs_path, 8);
   caml_external_raise = NULL;
   /* Determine options and position of bytecode file */
@@ -395,7 +395,7 @@ CAMLexport void caml_main(char **argv)
   /* Read the table of contents (section descriptors) */
   caml_read_section_descriptors(fd, &trail);
   /* Initialize the abstract machine */
-  caml_init_gc (minor_heap_init, heap_size_init, heap_chunk_init,
+  caml_init_gc (ctx, minor_heap_init, heap_size_init, heap_chunk_init,
                 percent_free_init, max_percent_free_init);
   caml_init_stack (max_stack_init);
   init_atoms();
@@ -417,13 +417,13 @@ CAMLexport void caml_main(char **argv)
   caml_stat_free(req_prims);
   /* Load the globals */
   caml_seek_section(fd, &trail, "DATA");
-  chan = caml_open_descriptor_in(fd);
+  chan = caml_open_descriptor_in(ctx, fd);
   caml_global_data = caml_input_val(chan);
-  caml_close_channel(chan); /* this also closes fd */
+  caml_close_channel(ctx, chan); /* this also closes fd */
   caml_stat_free(trail.section);
   /* Ensure that the globals are in the major heap. */
-  caml_oldify_one (caml_global_data, &caml_global_data);
-  caml_oldify_mopup ();
+  caml_oldify_one (ctx, caml_global_data, &caml_global_data);
+  caml_oldify_mopup (ctx);
   /* Initialize system libraries */
   caml_init_exceptions();
   caml_sys_init(exe_name, argv + pos);
@@ -442,7 +442,7 @@ CAMLexport void caml_main(char **argv)
                                             exception value.*/
       caml_debugger(UNCAUGHT_EXC);
     }
-    caml_fatal_uncaught_exception(caml_exn_bucket);
+    caml_fatal_uncaught_exception(ctx, caml_exn_bucket);
   }
 }
 
@@ -465,13 +465,13 @@ CAMLexport void caml_startup_code(
 #ifdef _MSC_VER
   caml_install_invalid_parameter_handler();
 #endif
-  caml_init_custom_operations();
+  caml_init_custom_operations(ctx);
 #ifdef DEBUG
   caml_verb_gc = 63;
 #endif
   cds_file = getenv("CAML_DEBUG_FILE");
   if (cds_file != NULL) {
-    caml_cds_file = caml_stat_alloc(strlen(cds_file) + 1);
+    caml_cds_file = caml_stat_alloc(ctx, strlen(cds_file) + 1);
     strcpy(caml_cds_file, cds_file);
   }
   parse_camlrunparam();
@@ -482,7 +482,7 @@ CAMLexport void caml_startup_code(
 #endif
   caml_external_raise = NULL;
   /* Initialize the abstract machine */
-  caml_init_gc (minor_heap_init, heap_size_init, heap_chunk_init,
+  caml_init_gc (ctx, minor_heap_init, heap_size_init, heap_chunk_init,
                 percent_free_init, max_percent_free_init);
   caml_init_stack (max_stack_init);
   init_atoms();
@@ -497,7 +497,7 @@ CAMLexport void caml_startup_code(
   if (caml_debugger_in_use) {
     int len, i;
     len = code_size / sizeof(opcode_t);
-    caml_saved_code = (unsigned char *) caml_stat_alloc(len);
+    caml_saved_code = (unsigned char *) caml_stat_alloc(ctx, len);
     for (i = 0; i < len; i++) caml_saved_code[i] = caml_start_code[i];
   }
 #ifdef THREADED_CODE
@@ -508,8 +508,8 @@ CAMLexport void caml_startup_code(
   /* Load the globals */
   caml_global_data = caml_input_value_from_block(data, data_size);
   /* Ensure that the globals are in the major heap. */
-  caml_oldify_one (caml_global_data, &caml_global_data);
-  caml_oldify_mopup ();
+  caml_oldify_one (ctx, caml_global_data, &caml_global_data);
+  caml_oldify_mopup (ctx);
   /* Record the sections (for caml_get_section_table in meta.c) */
   caml_section_table = section_table;
   caml_section_table_size = section_table_size;
@@ -526,6 +526,6 @@ CAMLexport void caml_startup_code(
                                             exception value.*/
       caml_debugger(UNCAUGHT_EXC);
     }
-    caml_fatal_uncaught_exception(caml_exn_bucket);
+    caml_fatal_uncaught_exception(ctx, caml_exn_bucket);
   }
 }

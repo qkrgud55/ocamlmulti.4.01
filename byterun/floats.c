@@ -104,10 +104,10 @@ CAMLprim value caml_format_float(pctx ctx, value fmt, value arg)
   if (prec < sizeof(format_buffer)) {
     dest = format_buffer;
   } else {
-    dest = caml_stat_alloc(prec);
+    dest = caml_stat_alloc(ctx, prec);
   }
   sprintf(dest, String_val(fmt), d);
-  res = caml_copy_string(dest);
+  res = caml_copy_string(ctx, dest);
   if (dest != format_buffer) {
     caml_stat_free(dest);
   }
@@ -115,17 +115,17 @@ CAMLprim value caml_format_float(pctx ctx, value fmt, value arg)
   } else {
     if (isnan(d))
     {
-      res = caml_copy_string("nan");
+      res = caml_copy_string(ctx, "nan");
     }
     else
     {
       if (d > 0)
       {
-        res = caml_copy_string("inf");
+        res = caml_copy_string(ctx, "inf");
       }
       else
       {
-        res = caml_copy_string("-inf");
+        res = caml_copy_string(ctx, "-inf");
       }
     }
   }
@@ -146,7 +146,7 @@ CAMLprim value caml_format_float(pctx ctx, value fmt, value arg)
   len =
     fidx >= 0 && fidx < lenvs && flen > 0 && flen <= lenvs - fidx
     ? flen : 0;
-  buf = len < sizeof(parse_buffer) ? parse_buffer : caml_stat_alloc(len + 1);
+  buf = len < sizeof(parse_buffer) ? parse_buffer : caml_stat_alloc(ctx, len + 1);
   src = String_val(vs) + fidx;
   dst = buf;
   while (len--) {
@@ -158,10 +158,10 @@ CAMLprim value caml_format_float(pctx ctx, value fmt, value arg)
   d = strtod((const char *) buf, &end);
   if (end != dst) goto error;
   if (buf != parse_buffer) caml_stat_free(buf);
-  return caml_copy_double(d);
+  return caml_copy_double(ctx, d);
  error:
   if (buf != parse_buffer) caml_stat_free(buf);
-  caml_failwith("float_of_string");
+  caml_failwith(ctx, "float_of_string");
 }
 
 CAMLprim value caml_float_of_string(pctx ctx, value vs)
@@ -172,7 +172,7 @@ CAMLprim value caml_float_of_string(pctx ctx, value vs)
   double d;
 
   len = caml_string_length(vs);
-  buf = len < sizeof(parse_buffer) ? parse_buffer : caml_stat_alloc(len + 1);
+  buf = len < sizeof(parse_buffer) ? parse_buffer : caml_stat_alloc(ctx, len + 1);
   src = String_val(vs);
   dst = buf;
   while (len--) {
@@ -184,10 +184,10 @@ CAMLprim value caml_float_of_string(pctx ctx, value vs)
   d = strtod((const char *) buf, &end);
   if (end != dst) goto error;
   if (buf != parse_buffer) caml_stat_free(buf);
-  return caml_copy_double(d);
+  return caml_copy_double(ctx, d);
  error:
   if (buf != parse_buffer) caml_stat_free(buf);
-  caml_failwith("float_of_string");
+  caml_failwith(ctx, "float_of_string");
 }
 
 CAMLprim value caml_int_of_float(value f)
@@ -197,160 +197,160 @@ CAMLprim value caml_int_of_float(value f)
 
 CAMLprim value caml_float_of_int(pctx ctx, value n)
 {
-  return caml_copy_double((double) Long_val(n));
+  return caml_copy_double(ctx, (double) Long_val(n));
 }
 
 CAMLprim value caml_neg_float(pctx ctx, value f)
 {
-  return caml_copy_double(- Double_val(f));
+  return caml_copy_double(ctx, - Double_val(f));
 }
 
 CAMLprim value caml_abs_float(pctx ctx, value f)
 {
-  return caml_copy_double(fabs(Double_val(f)));
+  return caml_copy_double(ctx, fabs(Double_val(f)));
 }
 
 CAMLprim value caml_add_float(pctx ctx, value f, value g)
 {
-  return caml_copy_double(Double_val(f) + Double_val(g));
+  return caml_copy_double(ctx, Double_val(f) + Double_val(g));
 }
 
 CAMLprim value caml_sub_float(pctx ctx, value f, value g)
 {
-  return caml_copy_double(Double_val(f) - Double_val(g));
+  return caml_copy_double(ctx, Double_val(f) - Double_val(g));
 }
 
 CAMLprim value caml_mul_float(pctx ctx, value f, value g)
 {
-  return caml_copy_double(Double_val(f) * Double_val(g));
+  return caml_copy_double(ctx, Double_val(f) * Double_val(g));
 }
 
 CAMLprim value caml_div_float(pctx ctx, value f, value g)
 {
-  return caml_copy_double(Double_val(f) / Double_val(g));
+  return caml_copy_double(ctx, Double_val(f) / Double_val(g));
 }
 
 CAMLprim value caml_exp_float(pctx ctx, value f)
 {
-  return caml_copy_double(exp(Double_val(f)));
+  return caml_copy_double(ctx, exp(Double_val(f)));
 }
 
 CAMLprim value caml_floor_float(pctx ctx, value f)
 {
-  return caml_copy_double(floor(Double_val(f)));
+  return caml_copy_double(ctx, floor(Double_val(f)));
 }
 
 CAMLprim value caml_fmod_float(pctx ctx, value f1, value f2)
 {
-  return caml_copy_double(fmod(Double_val(f1), Double_val(f2)));
+  return caml_copy_double(ctx, fmod(Double_val(f1), Double_val(f2)));
 }
 
 CAMLprim value caml_frexp_float(pctx ctx, value f)
 {
-  CAMLparam1 (f);
-  CAMLlocal2 (res, mantissa);
+  CAMLparam1 (ctx, f);
+  CAMLlocal2 (ctx, res, mantissa);
   int exponent;
 
-  mantissa = caml_copy_double(frexp (Double_val(f), &exponent));
-  res = caml_alloc_tuple(2);
+  mantissa = caml_copy_double(ctx, frexp (Double_val(f), &exponent));
+  res = caml_alloc_tuple(ctx, 2);
   Field(res, 0) = mantissa;
   Field(res, 1) = Val_int(exponent);
-  CAMLreturn (res);
+  CAMLreturn (ctx, res);
 }
 
 CAMLprim value caml_ldexp_float(pctx ctx, value f, value i)
 {
-  return caml_copy_double(ldexp(Double_val(f), Int_val(i)));
+  return caml_copy_double(ctx, ldexp(Double_val(f), Int_val(i)));
 }
 
 CAMLprim value caml_log_float(pctx ctx, value f)
 {
-  return caml_copy_double(log(Double_val(f)));
+  return caml_copy_double(ctx, log(Double_val(f)));
 }
 
 CAMLprim value caml_log10_float(pctx ctx, value f)
 {
-  return caml_copy_double(log10(Double_val(f)));
+  return caml_copy_double(ctx, log10(Double_val(f)));
 }
 
 CAMLprim value caml_modf_float(pctx ctx, value f)
 {
   double frem;
 
-  CAMLparam1 (f);
-  CAMLlocal3 (res, quo, rem);
+  CAMLparam1 (ctx, f);
+  CAMLlocal3 (ctx, res, quo, rem);
 
-  quo = caml_copy_double(modf (Double_val(f), &frem));
-  rem = caml_copy_double(frem);
-  res = caml_alloc_tuple(2);
+  quo = caml_copy_double(ctx, modf (Double_val(f), &frem));
+  rem = caml_copy_double(ctx, frem);
+  res = caml_alloc_tuple(ctx, 2);
   Field(res, 0) = quo;
   Field(res, 1) = rem;
-  CAMLreturn (res);
+  CAMLreturn (ctx, res);
 }
 
 CAMLprim value caml_sqrt_float(pctx ctx, value f)
 {
-  return caml_copy_double(sqrt(Double_val(f)));
+  return caml_copy_double(ctx, sqrt(Double_val(f)));
 }
 
 CAMLprim value caml_power_float(pctx ctx, value f, value g)
 {
-  return caml_copy_double(pow(Double_val(f), Double_val(g)));
+  return caml_copy_double(ctx, pow(Double_val(f), Double_val(g)));
 }
 
 CAMLprim value caml_sin_float(pctx ctx, value f)
 {
-  return caml_copy_double(sin(Double_val(f)));
+  return caml_copy_double(ctx, sin(Double_val(f)));
 }
 
 CAMLprim value caml_sinh_float(pctx ctx, value f)
 {
-  return caml_copy_double(sinh(Double_val(f)));
+  return caml_copy_double(ctx, sinh(Double_val(f)));
 }
 
 CAMLprim value caml_cos_float(pctx ctx, value f)
 {
-  return caml_copy_double(cos(Double_val(f)));
+  return caml_copy_double(ctx, cos(Double_val(f)));
 }
 
 CAMLprim value caml_cosh_float(pctx ctx, value f)
 {
-  return caml_copy_double(cosh(Double_val(f)));
+  return caml_copy_double(ctx, cosh(Double_val(f)));
 }
 
 CAMLprim value caml_tan_float(pctx ctx, value f)
 {
-  return caml_copy_double(tan(Double_val(f)));
+  return caml_copy_double(ctx, tan(Double_val(f)));
 }
 
 CAMLprim value caml_tanh_float(pctx ctx, value f)
 {
-  return caml_copy_double(tanh(Double_val(f)));
+  return caml_copy_double(ctx, tanh(Double_val(f)));
 }
 
 CAMLprim value caml_asin_float(pctx ctx, value f)
 {
-  return caml_copy_double(asin(Double_val(f)));
+  return caml_copy_double(ctx, asin(Double_val(f)));
 }
 
 CAMLprim value caml_acos_float(pctx ctx, value f)
 {
-  return caml_copy_double(acos(Double_val(f)));
+  return caml_copy_double(ctx, acos(Double_val(f)));
 }
 
 CAMLprim value caml_atan_float(pctx ctx, value f)
 {
-  return caml_copy_double(atan(Double_val(f)));
+  return caml_copy_double(ctx, atan(Double_val(f)));
 }
 
 CAMLprim value caml_atan2_float(pctx ctx, value f, value g)
 {
-  return caml_copy_double(atan2(Double_val(f), Double_val(g)));
+  return caml_copy_double(ctx, atan2(Double_val(f), Double_val(g)));
 }
 
 CAMLprim value caml_ceil_float(pctx ctx, value f)
 {
-  return caml_copy_double(ceil(Double_val(f)));
+  return caml_copy_double(ctx, ceil(Double_val(f)));
 }
 
 CAMLexport double caml_hypot(double x, double y)
@@ -371,7 +371,7 @@ CAMLexport double caml_hypot(double x, double y)
 
 CAMLprim value caml_hypot_float(pctx ctx, value f, value g)
 {
-  return caml_copy_double(caml_hypot(Double_val(f), Double_val(g)));
+  return caml_copy_double(ctx, caml_hypot(Double_val(f), Double_val(g)));
 }
 
 /* These emulations of expm1() and log1p() are due to William Kahan.
@@ -405,12 +405,12 @@ CAMLexport double caml_log1p(double x)
 
 CAMLprim value caml_expm1_float(pctx ctx, value f)
 {
-  return caml_copy_double(caml_expm1(Double_val(f)));
+  return caml_copy_double(ctx, caml_expm1(Double_val(f)));
 }
 
 CAMLprim value caml_log1p_float(pctx ctx, value f)
 {
-  return caml_copy_double(caml_log1p(Double_val(f)));
+  return caml_copy_double(ctx, caml_log1p(Double_val(f)));
 }
 
 union double_as_two_int32 {
@@ -438,7 +438,7 @@ CAMLexport double caml_copysign(double x, double y)
 
 CAMLprim value caml_copysign_float(pctx ctx, value f, value g)
 {
-  return caml_copy_double(caml_copysign(Double_val(f), Double_val(g)));
+  return caml_copy_double(ctx, caml_copysign(Double_val(f), Double_val(g)));
 }
 
 CAMLprim value caml_eq_float(value f, value g)

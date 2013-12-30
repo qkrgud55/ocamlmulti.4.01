@@ -97,7 +97,7 @@ void caml_ext_table_init(struct ext_table * tbl, int init_capa)
 {
   tbl->size = 0;
   tbl->capacity = init_capa;
-  tbl->contents = caml_stat_alloc(sizeof(void *) * init_capa);
+  tbl->contents = caml_stat_alloc(ctx, sizeof(void *) * init_capa);
 }
 
 int caml_ext_table_add(struct ext_table * tbl, void * data)

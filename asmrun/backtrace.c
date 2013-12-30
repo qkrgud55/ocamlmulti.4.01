@@ -44,9 +44,9 @@ CAMLprim value caml_record_backtrace(pctx ctx, value vflag)
     ctx->caml_backtrace_active = flag;
     ctx->caml_backtrace_pos = 0;
     if (flag) {
-      caml_register_global_root(&ctx->caml_backtrace_last_exn);
+      caml_register_global_root(ctx, &ctx->caml_backtrace_last_exn);
     } else {
-      caml_remove_global_root(&ctx->caml_backtrace_last_exn);
+      caml_remove_global_root(ctx, &ctx->caml_backtrace_last_exn);
     }
   }
   return Val_unit;
@@ -67,7 +67,7 @@ frame_descr * caml_next_frame_descriptor(pctx ctx, uintnat * pc, char ** sp)
   frame_descr * d;
   uintnat h;
 
-  if (ctx->caml_frame_descriptors == NULL) caml_init_frame_descriptors();
+  if (ctx->caml_frame_descriptors == NULL) caml_init_frame_descriptors(ctx);
 
   while (1) {
     h = Hash_retaddr(*pc);
@@ -145,8 +145,8 @@ void caml_stash_backtrace(pctx ctx, value exn, uintnat pc, char * sp, char * tra
    right size, then allocate space for the trace. */
 
 CAMLprim value caml_get_current_callstack(value max_frames_value) {
-  CAMLparam1(max_frames_value);
-  CAMLlocal1(trace);
+  CAMLparam1(ctx, max_frames_value);
+  CAMLlocal1(ctx, trace);
 
   /* we use `intnat` here because, were it only `int`, passing `max_int`
      from the OCaml side would overflow on 64bits machines. */
@@ -176,7 +176,7 @@ CAMLprim value caml_get_current_callstack(value max_frames_value) {
     }
   }
 
-  trace = caml_alloc((mlsize_t) trace_size, Abstract_tag);
+  trace = caml_alloc(ctx, (mlsize_t) trace_size, Abstract_tag);
 
   /* then collect the trace */
   {
@@ -195,7 +195,7 @@ CAMLprim value caml_get_current_callstack(value max_frames_value) {
     }
   }
 
-  CAMLreturn(trace);
+  CAMLreturn(ctx, trace);
 }
 
 /* Extract location information for the given frame descriptor */
@@ -292,51 +292,51 @@ void caml_print_exception_backtrace(pctx ctx)
   struct loc_info li;
 
   for (i = 0; i < ctx->caml_backtrace_pos; i++) {
-    extract_location_info((frame_descr *) (ctx->caml_backtrace_buffer[i]), &li);
-    print_location(&li, i);
+    extract_location_info(ctx, (frame_descr *) (ctx->caml_backtrace_buffer[i]), &li);
+    print_location(ctx, &li, i);
   }
 }
 
 /* Convert the raw backtrace to a data structure usable from OCaml */
 
 CAMLprim value caml_convert_raw_backtrace(value backtrace) {
-  CAMLparam1(backtrace);
-  CAMLlocal4(res, arr, p, fname);
+  CAMLparam1(ctx, backtrace);
+  CAMLlocal4(ctx, res, arr, p, fname);
   int i;
   struct loc_info li;
 
-  arr = caml_alloc(Wosize_val(backtrace), 0);
+  arr = caml_alloc(ctx, Wosize_val(backtrace), 0);
   for (i = 0; i < Wosize_val(backtrace); i++) {
-    extract_location_info((frame_descr *) Field(backtrace, i), &li);
+    extract_location_info(ctx, (frame_descr *) Field(backtrace, i), &li);
     if (li.loc_valid) {
-      fname = caml_copy_string(li.loc_filename);
-      p = caml_alloc_small(5, 0);
+      fname = caml_copy_string(ctx, li.loc_filename);
+      p = caml_alloc_small(ctx, 5, 0);
       Field(p, 0) = Val_bool(li.loc_is_raise);
       Field(p, 1) = fname;
       Field(p, 2) = Val_int(li.loc_lnum);
       Field(p, 3) = Val_int(li.loc_startchr);
       Field(p, 4) = Val_int(li.loc_endchr);
     } else {
-      p = caml_alloc_small(1, 1);
+      p = caml_alloc_small(ctx, 1, 1);
       Field(p, 0) = Val_bool(li.loc_is_raise);
     }
-    caml_modify(&Field(arr, i), p);
+    caml_modify(ctx, &Field(arr, i), p);
   }
-  res = caml_alloc_small(1, 0); Field(res, 0) = arr; /* Some */
-  CAMLreturn(res);
+  res = caml_alloc_small(ctx, 1, 0); Field(res, 0) = arr; /* Some */
+  CAMLreturn(ctx, res);
 }
 
 /* Get a copy of the latest backtrace */
 
 CAMLprim value caml_get_exception_raw_backtrace(pctx ctx, value unit)
 {
-  CAMLparam0();
-  CAMLlocal1(res);
+  CAMLparam0(ctx);
+  CAMLlocal1(ctx, res);
   res = caml_alloc(ctx->caml_backtrace_pos, Abstract_tag);
   if(ctx->caml_backtrace_buffer != NULL)
     memcpy(&Field(res, 0), ctx->caml_backtrace_buffer,
            ctx->caml_backtrace_pos * sizeof(code_t));
-  CAMLreturn(res);
+  CAMLreturn(ctx, res);
 }
 
 /* the function below is deprecated: we previously returned directly
@@ -351,9 +351,9 @@ CAMLprim value caml_get_exception_raw_backtrace(pctx ctx, value unit)
 
 CAMLprim value caml_get_exception_backtrace(pctx ctx, value unit)
 {
-  CAMLparam0();
-  CAMLlocal2(raw,res);
+  CAMLparam0(ctx);
+  CAMLlocal2(ctx, raw,res);
   raw = caml_get_exception_raw_backtrace(unit);
   res = caml_convert_raw_backtrace(raw);
-  CAMLreturn(res);
+  CAMLreturn(ctx, res);
 }

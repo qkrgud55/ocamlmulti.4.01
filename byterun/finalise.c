@@ -79,7 +79,7 @@ void caml_final_update (pctx ctx)
   }
 
   if (todo_count > 0){
-    alloc_to_do (todo_count);
+    alloc_to_do (ctx, todo_count);
     j = k = 0;
     for (i = 0; i < old; i++){
     again:
@@ -142,9 +142,9 @@ void caml_final_do_calls (pctx ctx)
       -- ctx->to_do_hd->size;
       f = ctx->to_do_hd->item[ctx->to_do_hd->size];
       ctx->running_finalisation_function = 1;
-      res = caml_callback_exn (0x0, f.fun, f.val + f.offset); // phc todo ctx
+      res = caml_callback_exn (ctx, 0x0, f.fun, f.val + f.offset); // phc todo ctx
       ctx->running_finalisation_function = 0;
-      if (Is_exception_result (res)) caml_raise (Extract_exception (res));
+      if (Is_exception_result (res)) caml_raise (ctx, Extract_exception (res));
     }
     caml_gc_message (0x80, "Done calling finalisation functions.\n", 0);
   }
@@ -214,14 +214,14 @@ void caml_final_empty_young (pctx ctx)
 CAMLprim value caml_final_register (pctx ctx, value f, value v)
 {
   if (!(Is_block (v) && Is_in_heap_or_young(v))) {
-    caml_invalid_argument ("Gc.finalise");
+    caml_invalid_argument (ctx, "Gc.finalise");
   }
   Assert (old <= young);
 
   if (young >= size){
     if (ctx->final_table == NULL){
       uintnat new_size = 30;
-      ctx->final_table = caml_stat_alloc (new_size * sizeof (struct final));
+      ctx->final_table = caml_stat_alloc (ctx, new_size * sizeof (struct final));
       Assert (old == 0);
       Assert (young == 0);
       size = new_size;

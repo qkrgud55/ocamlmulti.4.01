@@ -28,7 +28,7 @@
 
 CAMLprim value caml_static_alloc(value size)
 {
-  return (value) caml_stat_alloc((asize_t) Long_val(size));
+  return (value) caml_stat_alloc(ctx, (asize_t) Long_val(size));
 }
 
 CAMLprim value caml_static_free(value blk)
@@ -46,7 +46,7 @@ CAMLprim value caml_static_release_bytecode(value blk, value size)
 #ifndef NATIVE_CODE
   caml_release_bytecode((code_t) blk, (asize_t) Long_val(size));
 #else
-  caml_failwith("Meta.static_release_bytecode impossible with native code");
+  caml_failwith(ctx, "Meta.static_release_bytecode impossible with native code");
 #endif
   return Val_unit;
 }
@@ -90,7 +90,7 @@ CAMLprim value caml_obj_block(pctx ctx, value tag, value size)
   sz = Long_val(size);
   tg = Long_val(tag);
   if (sz == 0) return Atom(tg);
-  res = caml_alloc(sz, tg);
+  res = caml_alloc(ctx, sz, tg);
   for (i = 0; i < sz; i++)
     Field(res, i) = Val_long(0);
 
@@ -99,25 +99,25 @@ CAMLprim value caml_obj_block(pctx ctx, value tag, value size)
 
 CAMLprim value caml_obj_dup(pctx ctx, value arg)
 {
-  CAMLparam1 (arg);
-  CAMLlocal1 (res);
+  CAMLparam1 (ctx, arg);
+  CAMLlocal1 (ctx, res);
   mlsize_t sz, i;
   tag_t tg;
 
   sz = Wosize_val(arg);
-  if (sz == 0) CAMLreturn (arg);
+  if (sz == 0) CAMLreturn (ctx, arg);
   tg = Tag_val(arg);
   if (tg >= No_scan_tag) {
-    res = caml_alloc(sz, tg);
+    res = caml_alloc(ctx, sz, tg);
     memcpy(Bp_val(res), Bp_val(arg), sz * sizeof(value));
   } else if (sz <= Max_young_wosize) {
-    res = caml_alloc_small(sz, tg);
+    res = caml_alloc_small(ctx, sz, tg);
     for (i = 0; i < sz; i++) Field(res, i) = Field(arg, i);
   } else {
-    res = caml_alloc_shr(sz, tg);
-    for (i = 0; i < sz; i++) caml_initialize(&Field(res, i), Field(arg, i));
+    res = caml_alloc_shr(ctx, sz, tg);
+    for (i = 0; i < sz; i++) caml_initialize(ctx, &Field(res, i), Field(arg, i));
   }
-  CAMLreturn (res);
+  CAMLreturn (ctx, res);
 }
 
 /* Shorten the given block to the given size and return void.
@@ -141,7 +141,7 @@ CAMLprim value caml_obj_truncate (pctx ctx, value v, value newsize)
   if (tag == Double_array_tag) new_wosize *= Double_wosize;  /* PR#156 */
 
   if (new_wosize <= 0 || new_wosize > wosize){
-    caml_invalid_argument ("Obj.truncate");
+    caml_invalid_argument (ctx, "Obj.truncate");
   }
   if (new_wosize == wosize) return Val_unit;
   /* PR#61: since we're about to lose our references to the elements
@@ -149,7 +149,7 @@ CAMLprim value caml_obj_truncate (pctx ctx, value v, value newsize)
      can darken them as appropriate. */
   if (tag < No_scan_tag) {
     for (i = new_wosize; i < wosize; i++){
-      caml_modify(&Field(v, i), Val_unit);
+      caml_modify(ctx, &Field(v, i), Val_unit);
 #ifdef DEBUG
       Field (v, i) = Debug_free_truncate;
 #endif
@@ -186,12 +186,12 @@ CAMLprim value caml_lazy_follow_forward (value v)
 
 CAMLprim value caml_lazy_make_forward (pctx ctx, value v)
 {
-  CAMLparam1 (v);
-  CAMLlocal1 (res);
+  CAMLparam1 (ctx, v);
+  CAMLlocal1 (ctx, res);
 
-  res = caml_alloc_small (1, Forward_tag);
+  res = caml_alloc_small (ctx, 1, Forward_tag);
   Field (res, 0) = v;
-  CAMLreturn (res);
+  CAMLreturn (ctx, res);
 }
 
 /* For mlvalues.h and camlinternalOO.ml

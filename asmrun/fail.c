@@ -55,7 +55,7 @@ char * ctx->caml_exception_pointer = NULL;
 void caml_raise(pctx ctx, value v)
 {
   Unlock_exn();
-  if (ctx->caml_exception_pointer == NULL) caml_fatal_uncaught_exception(v);
+  if (ctx->caml_exception_pointer == NULL) caml_fatal_uncaught_exception(ctx, v);
 
 #ifndef Stack_grows_upwards
 #define PUSHED_AFTER <
@@ -68,60 +68,60 @@ void caml_raise(pctx ctx, value v)
   }
 #undef PUSHED_AFTER
 
-  caml_raise_exception(v);
+  caml_raise_exception(ctx, v);
 }
 
 void caml_raise_constant(pctx ctx, value tag)
 {
-  CAMLparam1 (tag);
-  CAMLlocal1 (bucket);
+  CAMLparam1 (ctx, tag);
+  CAMLlocal1 (ctx, bucket);
 
-  bucket = caml_alloc_small (1, 0);
+  bucket = caml_alloc_small (ctx, 1, 0);
   Field(bucket, 0) = tag;
-  caml_raise(bucket);
+  caml_raise(ctx, bucket);
   CAMLnoreturn;
 }
 
 void caml_raise_with_arg(pctx ctx, value tag, value arg)
 {
-  CAMLparam2 (tag, arg);
-  CAMLlocal1 (bucket);
+  CAMLparam2 (ctx, tag, arg);
+  CAMLlocal1 (ctx, bucket);
 
-  bucket = caml_alloc_small (2, 0);
+  bucket = caml_alloc_small (ctx, 2, 0);
   Field(bucket, 0) = tag;
   Field(bucket, 1) = arg;
-  caml_raise(bucket);
+  caml_raise(ctx, bucket);
   CAMLnoreturn;
 }
 
 void caml_raise_with_args(pctx ctx, value tag, int nargs, value args[])
 {
-  CAMLparam1 (tag);
-  CAMLxparamN (args, nargs);
+  CAMLparam1 (ctx, tag);
+  CAMLxparamN (ctx, args, nargs);
   value bucket;
   int i;
 
   Assert(1 + nargs <= Max_young_wosize);
-  bucket = caml_alloc_small (1 + nargs, 0);
+  bucket = caml_alloc_small (ctx, 1 + nargs, 0);
   Field(bucket, 0) = tag;
   for (i = 0; i < nargs; i++) Field(bucket, 1 + i) = args[i];
-  caml_raise(bucket);
+  caml_raise(ctx, bucket);
   CAMLnoreturn;
 }
 
 void caml_raise_with_string(pctx ctx, value tag, char const *msg)
 {
-  caml_raise_with_arg(tag, caml_copy_string(msg));
+  caml_raise_with_arg(ctx, tag, caml_copy_string(ctx, msg));
 }
 
 void caml_failwith (pctx ctx, char const *msg)
 {
-  caml_raise_with_string((value) caml_exn_Failure, msg);
+  caml_raise_with_string(ctx, (value) caml_exn_Failure, msg);
 }
 
 void caml_invalid_argument (pctx ctx, char const *msg)
 {
-  caml_raise_with_string((value) caml_exn_Invalid_argument, msg);
+  caml_raise_with_string(ctx, (value) caml_exn_Invalid_argument, msg);
 }
 
 /* To raise [Out_of_memory], we can't use [caml_raise_constant],
@@ -134,37 +134,37 @@ void caml_invalid_argument (pctx ctx, char const *msg)
 
 void caml_raise_out_of_memory(pctx ctx)
 {
-  caml_raise((value) &caml_bucket_Out_of_memory);
+  caml_raise(ctx, (value) &caml_bucket_Out_of_memory);
 }
 
 void caml_raise_stack_overflow(pctx ctx)
 {
-  caml_raise((value) &caml_bucket_Stack_overflow);
+  caml_raise(ctx, (value) &caml_bucket_Stack_overflow);
 }
 
 void caml_raise_sys_error(pctx ctx, value msg)
 {
-  caml_raise_with_arg((value) caml_exn_Sys_error, msg);
+  caml_raise_with_arg(ctx, (value) caml_exn_Sys_error, msg);
 }
 
 void caml_raise_end_of_file(pctx ctx)
 {
-  caml_raise_constant((value) caml_exn_End_of_file);
+  caml_raise_constant(ctx, (value) caml_exn_End_of_file);
 }
 
 void caml_raise_zero_divide(pctx ctx)
 {
-  caml_raise_constant((value) caml_exn_Division_by_zero);
+  caml_raise_constant(ctx, (value) caml_exn_Division_by_zero);
 }
 
 void caml_raise_not_found(pctx ctx)
 {
-  caml_raise_constant((value) caml_exn_Not_found);
+  caml_raise_constant(ctx, (value) caml_exn_Not_found);
 }
 
 void caml_raise_sys_blocked_io(pctx ctx)
 {
-  caml_raise_constant((value) caml_exn_Sys_blocked_io);
+  caml_raise_constant(ctx, (value) caml_exn_Sys_blocked_io);
 }
 
 /* We allocate statically the bucket for the exception because we can't
@@ -203,7 +203,7 @@ void caml_array_bound_error(pctx ctx)
                         &ctx->array_bound_error_msg + 1);
     ctx->array_bound_error_bucket_inited = 1;
   }
-  caml_raise((value) &ctx->array_bound_error_bucket.exn);
+  caml_raise(ctx, (value) &ctx->array_bound_error_bucket.exn);
 }
 
 int caml_is_special_exception(value exn) {

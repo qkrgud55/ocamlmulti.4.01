@@ -601,7 +601,7 @@ value caml_interprete(code_t prog, asize_t prog_size)
     }
 
     Instruct(SETGLOBAL):
-      caml_modify(&Field(caml_global_data, *pc), accu);
+      caml_modify(ctx, &Field(caml_global_data, *pc), accu);
       accu = Val_unit;
       pc++;
       Next;
@@ -630,9 +630,9 @@ value caml_interprete(code_t prog, asize_t prog_size)
         Field(block, 0) = accu;
         for (i = 1; i < wosize; i++) Field(block, i) = *sp++;
       } else {
-        block = caml_alloc_shr(wosize, tag);
-        caml_initialize(&Field(block, 0), accu);
-        for (i = 1; i < wosize; i++) caml_initialize(&Field(block, i), *sp++);
+        block = caml_alloc_shr(ctx, wosize, tag);
+        caml_initialize(ctx, &Field(block, 0), accu);
+        for (i = 1; i < wosize; i++) caml_initialize(ctx, &Field(block, i), *sp++);
       }
       accu = block;
       Next;
@@ -673,7 +673,7 @@ value caml_interprete(code_t prog, asize_t prog_size)
       if (size <= Max_young_wosize / Double_wosize) {
         Alloc_small(block, size * Double_wosize, Double_array_tag);
       } else {
-        block = caml_alloc_shr(size * Double_wosize, Double_array_tag);
+        block = caml_alloc_shr(ctx, size * Double_wosize, Double_array_tag);
       }
       Store_double_field(block, 0, Double_val(accu));
       for (i = 1; i < size; i++){
@@ -705,23 +705,23 @@ value caml_interprete(code_t prog, asize_t prog_size)
     }
 
     Instruct(SETFIELD0):
-      caml_modify(&Field(accu, 0), *sp++);
+      caml_modify(ctx, &Field(accu, 0), *sp++);
       accu = Val_unit;
       Next;
     Instruct(SETFIELD1):
-      caml_modify(&Field(accu, 1), *sp++);
+      caml_modify(ctx, &Field(accu, 1), *sp++);
       accu = Val_unit;
       Next;
     Instruct(SETFIELD2):
-      caml_modify(&Field(accu, 2), *sp++);
+      caml_modify(ctx, &Field(accu, 2), *sp++);
       accu = Val_unit;
       Next;
     Instruct(SETFIELD3):
-      caml_modify(&Field(accu, 3), *sp++);
+      caml_modify(ctx, &Field(accu, 3), *sp++);
       accu = Val_unit;
       Next;
     Instruct(SETFIELD):
-      caml_modify(&Field(accu, *pc), *sp++);
+      caml_modify(ctx, &Field(accu, *pc), *sp++);
       accu = Val_unit;
       pc++;
       Next;
@@ -745,7 +745,7 @@ value caml_interprete(code_t prog, asize_t prog_size)
       sp += 1;
       Next;
     Instruct(SETVECTITEM):
-      caml_modify(&Field(accu, Long_val(sp[0])), sp[1]);
+      caml_modify(ctx, &Field(accu, Long_val(sp[0])), sp[1]);
       accu = Val_unit;
       sp += 2;
       Next;
@@ -817,7 +817,7 @@ value caml_interprete(code_t prog, asize_t prog_size)
     Instruct(RAISE):
     raise_exception:
       if (caml_trapsp >= caml_trap_barrier) caml_debugger(TRAP_BARRIER);
-      if (caml_backtrace_active) caml_stash_backtrace(accu, pc, sp);
+      if (caml_backtrace_active) caml_stash_backtrace(ctx, accu, pc, sp);
       if ((char *) caml_trapsp
           >= (char *) caml_stack_high - initial_sp_offset) {
         caml_external_raise = initial_external_raise;
@@ -945,7 +945,7 @@ value caml_interprete(code_t prog, asize_t prog_size)
 
     Instruct(DIVINT): {
       intnat divisor = Long_val(*sp++);
-      if (divisor == 0) { Setup_for_c_call; caml_raise_zero_divide(); }
+      if (divisor == 0) { Setup_for_c_call; caml_raise_zero_divide(ctx); }
 #ifdef NONSTANDARD_DIV_MOD
       accu = Val_long(caml_safe_div(Long_val(accu), divisor));
 #else
@@ -955,7 +955,7 @@ value caml_interprete(code_t prog, asize_t prog_size)
     }
     Instruct(MODINT): {
       intnat divisor = Long_val(*sp++);
-      if (divisor == 0) { Setup_for_c_call; caml_raise_zero_divide(); }
+      if (divisor == 0) { Setup_for_c_call; caml_raise_zero_divide(ctx); }
 #ifdef NONSTANDARD_DIV_MOD
       accu = Val_long(caml_safe_mod(Long_val(accu), divisor));
 #else

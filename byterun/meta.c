@@ -41,7 +41,7 @@ asize_t caml_section_table_size;
 
 CAMLprim value caml_get_section_table(value unit)
 {
-  if (caml_section_table == NULL) caml_raise_not_found();
+  if (caml_section_table == NULL) caml_raise_not_found(ctx);
   return caml_input_value_from_block(caml_section_table,
                                      caml_section_table_size);
 }
@@ -56,14 +56,14 @@ CAMLprim value caml_reify_bytecode(value prog, value len)
   caml_thread_code((code_t) prog, (asize_t) Long_val(len));
 #endif
   caml_prepare_bytecode((code_t) prog, (asize_t) Long_val(len));
-  clos = caml_alloc_small (1, Closure_tag);
+  clos = caml_alloc_small (ctx, 1, Closure_tag);
   Code_val(clos) = (code_t) prog;
   return clos;
 }
 
 CAMLprim value caml_register_code_fragment(value prog, value len, value digest)
 {
-  struct code_fragment * cf = caml_stat_alloc(sizeof(struct code_fragment));
+  struct code_fragment * cf = caml_stat_alloc(ctx, sizeof(struct code_fragment));
   cf->code_start = (char *) prog;
   cf->code_end = (char *) prog + Long_val(len);
   memcpy(cf->digest, String_val(digest), 16);
@@ -83,9 +83,9 @@ CAMLprim value caml_realloc_global(value size)
     requested_size = (requested_size + 0x100) & 0xFFFFFF00;
     caml_gc_message (0x08, "Growing global data to %lu entries\n",
                      requested_size);
-    new_global_data = caml_alloc_shr(requested_size, 0);
+    new_global_data = caml_alloc_shr(ctx, requested_size, 0);
     for (i = 0; i < actual_size; i++)
-      caml_initialize(&Field(new_global_data, i), Field(caml_global_data, i));
+      caml_initialize(ctx, &Field(new_global_data, i), Field(caml_global_data, i));
     for (i = actual_size; i < requested_size; i++){
       Field (new_global_data, i) = Val_long (0);
     }
@@ -144,31 +144,31 @@ CAMLprim value caml_invoke_traced_function(value codeptr, value env, value arg)
 
 value caml_get_global_data(value unit)
 {
-  caml_invalid_argument("Meta.get_global_data");
+  caml_invalid_argument(ctx, "Meta.get_global_data");
   return Val_unit; /* not reached */
 }
 
 value caml_get_section_table(value unit)
 {
-  caml_invalid_argument("Meta.get_section_table");
+  caml_invalid_argument(ctx, "Meta.get_section_table");
   return Val_unit; /* not reached */
 }
 
 value caml_realloc_global(value size)
 {
-  caml_invalid_argument("Meta.realloc_global");
+  caml_invalid_argument(ctx, "Meta.realloc_global");
   return Val_unit; /* not reached */
 }
 
 value caml_invoke_traced_function(value codeptr, value env, value arg)
 {
-  caml_invalid_argument("Meta.invoke_traced_function");
+  caml_invalid_argument(ctx, "Meta.invoke_traced_function");
   return Val_unit; /* not reached */
 }
 
 value caml_reify_bytecode(value prog, value len)
 {
-  caml_invalid_argument("Meta.reify_bytecode");
+  caml_invalid_argument(ctx, "Meta.reify_bytecode");
   return Val_unit; /* not reached */
 }
 

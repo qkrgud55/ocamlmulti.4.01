@@ -48,8 +48,8 @@ CAMLprim value caml_natdynlink_globals_inited(value unit)
 
 CAMLprim value caml_natdynlink_open(value filename, value global)
 {
-  CAMLparam1 (filename);
-  CAMLlocal1 (res);
+  CAMLparam1 (ctx, filename);
+  CAMLlocal1 (ctx, res);
   void *sym;
   void *handle;
 
@@ -58,21 +58,21 @@ CAMLprim value caml_natdynlink_open(value filename, value global)
   handle = caml_dlopen(String_val(filename), 1, Int_val(global));
 
   if (NULL == handle)
-    CAMLreturn(caml_copy_string(caml_dlerror()));
+    CAMLreturn(ctx, caml_copy_string(ctx, caml_dlerror()));
 
   sym = caml_dlsym(handle, "caml_plugin_header");
   if (NULL == sym)
-    CAMLreturn(caml_copy_string("not an OCaml plugin"));
+    CAMLreturn(ctx, caml_copy_string(ctx, "not an OCaml plugin"));
 
-  res = caml_alloc_tuple(2);
+  res = caml_alloc_tuple(ctx, 2);
   Field(res, 0) = (value) handle;
   Field(res, 1) = (value) (sym);
-  CAMLreturn(res);
+  CAMLreturn(ctx, res);
 }
 
 CAMLprim value caml_natdynlink_run(void *handle, value symbol) {
-  CAMLparam1 (symbol);
-  CAMLlocal1 (result);
+  CAMLparam1 (ctx, symbol);
+  CAMLlocal1 (ctx, result);
   void *sym,*sym2;
   struct code_fragment * cf;
 
@@ -83,10 +83,10 @@ CAMLprim value caml_natdynlink_run(void *handle, value symbol) {
   unit = String_val(symbol);
 
   sym = optsym("__frametable");
-  if (NULL != sym) caml_register_frametable(sym);
+  if (NULL != sym) caml_register_frametable(ctx, sym);
 
   sym = optsym("");
-  if (NULL != sym) caml_register_dyn_global(sym);
+  if (NULL != sym) caml_register_dyn_global(ctx, sym);
 
   sym = optsym("__data_begin");
   sym2 = optsym("__data_end");
@@ -97,7 +97,7 @@ CAMLprim value caml_natdynlink_run(void *handle, value symbol) {
   sym2 = optsym("__code_end");
   if (NULL != sym && NULL != sym2) {
     caml_page_table_add(In_code_area, sym, sym2);
-    cf = caml_stat_alloc(sizeof(struct code_fragment));
+    cf = caml_stat_alloc(ctx, sizeof(struct code_fragment));
     cf->code_start = (char *) sym;
     cf->code_end = (char *) sym2;
     cf->digest_computed = 0;
@@ -105,18 +105,18 @@ CAMLprim value caml_natdynlink_run(void *handle, value symbol) {
   }
 
   entrypoint = optsym("__entry");
-  if (NULL != entrypoint) result = caml_callback((value)(&entrypoint), 0);
+  if (NULL != entrypoint) result = caml_callback(ctx, (value)(&entrypoint), 0);
   else result = Val_unit;
 
 #undef optsym
 
-  CAMLreturn (result);
+  CAMLreturn (ctx, result);
 }
 
 CAMLprim value caml_natdynlink_run_toplevel(value filename, value symbol)
 {
-  CAMLparam2 (filename, symbol);
-  CAMLlocal2 (res, v);
+  CAMLparam2 (ctx, filename, symbol);
+  CAMLlocal2 (ctx, res, v);
   void *handle;
 
   /* TODO: dlclose in case of error... */
@@ -124,23 +124,23 @@ CAMLprim value caml_natdynlink_run_toplevel(value filename, value symbol)
   handle = caml_dlopen(String_val(filename), 1, 1);
 
   if (NULL == handle) {
-    res = caml_alloc(1,1);
-    v = caml_copy_string(caml_dlerror());
-    Store_field(res, 0, v);
+    res = caml_alloc(ctx, 1,1);
+    v = caml_copy_string(ctx, caml_dlerror());
+    Store_field(ctx, res, 0, v);
   } else {
-    res = caml_alloc(1,0);
+    res = caml_alloc(ctx, 1,0);
     v = caml_natdynlink_run(handle, symbol);
-    Store_field(res, 0, v);
+    Store_field(ctx, res, 0, v);
   }
-  CAMLreturn(res);
+  CAMLreturn(ctx, res);
 }
 
 CAMLprim value caml_natdynlink_loadsym(value symbol)
 {
-  CAMLparam1 (symbol);
-  CAMLlocal1 (sym);
+  CAMLparam1 (ctx, symbol);
+  CAMLlocal1 (ctx, sym);
 
   sym = (value) caml_globalsym(String_val(symbol));
-  if (!sym) caml_failwith(String_val(symbol));
-  CAMLreturn(sym);
+  if (!sym) caml_failwith(ctx, String_val(symbol));
+  CAMLreturn(ctx, sym);
 }

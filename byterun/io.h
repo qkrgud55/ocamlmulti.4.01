@@ -65,13 +65,13 @@ enum {
    type struct channel *.  No locking is performed. */
 
 #define putch(channel, ch) do{                                            \
-  if ((channel)->curr >= (channel)->end) caml_flush_partial(channel);     \
+  if ((channel)->curr >= (channel)->end) caml_flush_partial(ctx, channel);     \
   *((channel)->curr)++ = (ch);                                            \
 }while(0)
 
 #define getch(channel)                                                      \
   ((channel)->curr >= (channel)->max                                        \
-   ? caml_refill(channel)                                                   \
+   ? caml_refill(ctx, channel)                                                   \
    : (unsigned char) *((channel)->curr)++)
 
 CAMLextern struct channel * caml_open_descriptor_in (pctx ctx, int);
@@ -114,7 +114,7 @@ CAMLextern struct channel * caml_all_opened_channels;
 /* Conversion between file_offset and int64 */
 
 #ifdef ARCH_INT64_TYPE
-#define Val_file_offset(fofs) caml_copy_int64(fofs)
+#define Val_file_offset(fofs) caml_copy_int64(ctx, fofs)
 #define File_offset_val(v) ((file_offset) Int64_val(v))
 #else
 CAMLextern value caml_Val_file_offset(pctx ctx, file_offset fofs);

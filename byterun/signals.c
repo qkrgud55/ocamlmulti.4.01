@@ -47,7 +47,7 @@ void caml_process_pending_signals(void)
     for (i = 0; i < NSIG; i++) {
       if (caml_pending_signals[i]) {
         caml_pending_signals[i] = 0;
-        caml_execute_signal(i, 0);
+        caml_execute_signal(ctx, i, 0);
       }
     }
   }
@@ -139,7 +139,7 @@ void caml_execute_signal(pctx ctx, int signal_number, int in_signal_handler)
   sigaddset(&sigs, signal_number);
   sigprocmask(SIG_BLOCK, &sigs, &sigs);
 #endif
-  res = caml_callback_exn(0x0,
+  res = caml_callback_exn(ctx, 0x0,
            Field(caml_signal_handlers, signal_number),
            Val_int(caml_rev_convert_signal_number(signal_number))); // phc todo ctx
 #ifdef POSIX_SIGNALS
@@ -152,7 +152,7 @@ void caml_execute_signal(pctx ctx, int signal_number, int in_signal_handler)
     sigprocmask(SIG_SETMASK, &sigs, NULL);
   }
 #endif
-  if (Is_exception_result(res)) caml_raise(Extract_exception(res));
+  if (Is_exception_result(res)) caml_raise(ctx, Extract_exception(res));
 }
 
 /* Arrange for a garbage collection to be performed as soon as possible */
@@ -265,13 +265,13 @@ CAMLexport int caml_rev_convert_signal_number(int signo)
 
 CAMLprim value caml_install_signal_handler(pctx ctx, value signal_number, value action)
 {
-  CAMLparam2 (signal_number, action);
-  CAMLlocal1 (res);
+  CAMLparam2 (ctx, signal_number, action);
+  CAMLlocal1 (ctx, res);
   int sig, act, oldact;
 
   sig = caml_convert_signal_number(Int_val(signal_number));
   if (sig < 0 || sig >= NSIG)
-    caml_invalid_argument("Sys.signal: unavailable signal");
+    caml_invalid_argument(ctx, "Sys.signal: unavailable signal");
   switch(action) {
   case Val_int(0):              /* Signal_default */
     act = 0;
@@ -283,7 +283,7 @@ CAMLprim value caml_install_signal_handler(pctx ctx, value signal_number, value 
     act = 2;
     break;
   }
-  oldact = caml_set_signal_action(sig, act);
+  oldact = caml_set_signal_action(ctx, sig, act);
   switch (oldact) {
   case 0:                       /* was Signal_default */
     res = Val_int(0);
@@ -292,19 +292,19 @@ CAMLprim value caml_install_signal_handler(pctx ctx, value signal_number, value 
     res = Val_int(1);
     break;
   case 2:                       /* was Signal_handle */
-    res = caml_alloc_small (1, 0);
+    res = caml_alloc_small (ctx, 1, 0);
     Field(res, 0) = Field(caml_signal_handlers, sig);
     break;
   default:                      /* error in caml_set_signal_action */
-    caml_sys_error(NO_ARG);
+    caml_sys_error(ctx, NO_ARG);
   }
   if (Is_block(action)) {
     if (caml_signal_handlers == 0) {
-      caml_signal_handlers = caml_alloc(NSIG, 0);
-      caml_register_global_root(&caml_signal_handlers);
+      caml_signal_handlers = caml_alloc(ctx, NSIG, 0);
+      caml_register_global_root(ctx, &caml_signal_handlers);
     }
-    caml_modify(&Field(caml_signal_handlers, sig), Field(action, 0));
+    caml_modify(ctx, &Field(caml_signal_handlers, sig), Field(action, 0));
   }
   caml_process_pending_signals();
-  CAMLreturn (res);
+  CAMLreturn (ctx, res);
 }

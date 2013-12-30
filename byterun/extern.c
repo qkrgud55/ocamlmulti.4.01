@@ -196,7 +196,7 @@ static void init_extern_output(void)
 {
   extern_userprovided_output = NULL;
   extern_output_first = malloc(sizeof(struct output_block));
-  if (extern_output_first == NULL) caml_raise_out_of_memory();
+  if (extern_output_first == NULL) caml_raise_out_of_memory(ctx);
   extern_output_block = extern_output_first;
   extern_output_block->next = NULL;
   extern_ptr = extern_output_block->data;
@@ -265,21 +265,21 @@ static void extern_out_of_memory(void)
 {
   extern_replay_trail();
   free_extern_output();
-  caml_raise_out_of_memory();
+  caml_raise_out_of_memory(ctx);
 }
 
 static void extern_invalid_argument(char *msg)
 {
   extern_replay_trail();
   free_extern_output();
-  caml_invalid_argument(msg);
+  caml_invalid_argument(ctx, msg);
 }
 
 static void extern_failwith(char *msg)
 {
   extern_replay_trail();
   free_extern_output();
-  caml_failwith(msg);
+  caml_failwith(ctx, msg);
 }
 
 static void extern_stack_overflow(void)
@@ -287,7 +287,7 @@ static void extern_stack_overflow(void)
   caml_gc_message (0x04, "Stack overflow in marshaling value\n", 0);
   extern_replay_trail();
   free_extern_output();
-  caml_raise_out_of_memory();
+  caml_raise_out_of_memory(ctx);
 }
 
 /* Write characters, integers, and blocks in the output buffer */
@@ -588,7 +588,7 @@ static intnat extern_value(value v, value flags)
        Besides, some of the array lengths or string lengths or shared offsets
        it contains may have overflowed the 32 bits used to write them. */
     free_extern_output();
-    caml_failwith("output_value: object too big");
+    caml_failwith(ctx, "output_value: object too big");
   }
 #endif
   if (extern_userprovided_output != NULL)
@@ -609,7 +609,7 @@ void caml_output_val(struct channel *chan, value v, value flags)
   struct output_block * blk, * nextblk;
 
   if (! caml_channel_binary_mode(chan))
-    caml_failwith("output_value: not a binary channel");
+    caml_failwith(ctx, "output_value: not a binary channel");
   init_extern_output();
   extern_value(v, flags);
   /* During [caml_really_putblock], concurrent [caml_output_val] operations
@@ -617,7 +617,7 @@ void caml_output_val(struct channel *chan, value v, value flags)
      and [extern_output_first] may change. So, save it in a local variable. */
   blk = extern_output_first;
   while (blk != NULL) {
-    caml_really_putblock(chan, blk->data, blk->end - blk->data);
+    caml_really_putblock(ctx, chan, blk->data, blk->end - blk->data);
     nextblk = blk->next;
     free(blk);
     blk = nextblk;
@@ -626,13 +626,13 @@ void caml_output_val(struct channel *chan, value v, value flags)
 
 CAMLprim value caml_output_value(value vchan, value v, value flags)
 {
-  CAMLparam3 (vchan, v, flags);
+  CAMLparam3 (ctx, vchan, v, flags);
   struct channel * channel = Channel(vchan);
 
   Lock(channel);
   caml_output_val(channel, v, flags);
   Unlock(channel);
-  CAMLreturn (Val_unit);
+  CAMLreturn (ctx, Val_unit);
 }
 
 CAMLprim value caml_output_value_to_string(value v, value flags)
@@ -646,7 +646,7 @@ CAMLprim value caml_output_value_to_string(value v, value flags)
   /* PR#4030: it is prudent to save extern_output_first before allocating
      the result, as in caml_output_val */
   blk = extern_output_first;
-  res = caml_alloc_string(len);
+  res = caml_alloc_string(ctx, len);
   ofs = 0;
   while (blk != NULL) {
     int n = blk->end - blk->data;

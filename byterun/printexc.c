@@ -105,8 +105,8 @@ void caml_fatal_uncaught_exception(pctx ctx, value exn)
   saved_backtrace_active = ctx->caml_backtrace_active;
   saved_backtrace_pos = ctx->caml_backtrace_pos;
   ctx->caml_backtrace_active = 0;
-  at_exit = caml_named_value("Pervasives.do_at_exit");
-  if (at_exit != NULL) caml_callback_exn(0x0, *at_exit, Val_unit); // phc todo ctx
+  at_exit = caml_named_value(ctx, "Pervasives.do_at_exit");
+  if (at_exit != NULL) caml_callback_exn(ctx, 0x0, *at_exit, Val_unit); // phc todo ctx
   ctx->caml_backtrace_active = saved_backtrace_active;
   ctx->caml_backtrace_pos = saved_backtrace_pos;
   /* Display the uncaught exception */
@@ -118,7 +118,7 @@ void caml_fatal_uncaught_exception(pctx ctx, value exn)
       && !caml_debugger_in_use
 #endif
       ) {
-    caml_print_exception_backtrace();
+    caml_print_exception_backtrace(ctx);
   }
   /* Terminate the process */
   exit(2);

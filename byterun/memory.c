@@ -250,7 +250,7 @@ void caml_free_for_heap (char *mem)
    The contents of the chunk must be a sequence of valid blocks and
    fragments: no space between blocks and no trailing garbage.  If
    some blocks are blue, they must be added to the free list by the
-   caller.  All other blocks must have the color [caml_allocation_color(m)].
+   caller.  All other blocks must have the color [caml_allocation_color(ctx, m)].
    The caller must update [caml_allocated_words] if applicable.
    Return value: 0 if no error; -1 in case of error.
 
@@ -308,7 +308,7 @@ static char *expand_heap (pctx ctx, mlsize_t request)
 
   Assert (request <= Max_wosize);
   over_request = request + request / 100 * ctx->caml_percent_free;
-  malloc_request = caml_round_heap_chunk_size (Bhsize_wosize (over_request));
+  malloc_request = caml_round_heap_chunk_size (ctx, Bhsize_wosize (over_request));
   mem = caml_alloc_for_heap (malloc_request);
   if (mem == NULL){
     caml_gc_message (0x04, "No room for growing heap\n", 0);
@@ -339,7 +339,7 @@ static char *expand_heap (pctx ctx, mlsize_t request)
     if (remain == 1) Hd_hp (hp) = Make_header (0, 0, Caml_white);
   }
   Assert (Wosize_hp (mem) >= request);
-  if (caml_add_to_heap (mem) != 0){
+  if (caml_add_to_heap (ctx, mem) != 0){
     caml_free_for_heap (mem);
     return NULL;
   }
@@ -405,18 +405,18 @@ CAMLexport value caml_alloc_shr (pctx ctx, mlsize_t wosize, tag_t tag)
 {
   char *hp, *new_block;
 
-  if (wosize > Max_wosize) caml_raise_out_of_memory ();
-  hp = caml_fl_allocate (wosize);
+  if (wosize > Max_wosize) caml_raise_out_of_memory (ctx);
+  hp = caml_fl_allocate (ctx, wosize);
   if (hp == NULL){
-    new_block = expand_heap (wosize);
+    new_block = expand_heap (ctx, wosize);
     if (new_block == NULL) {
       if (ctx->caml_in_minor_collection)
         caml_fatal_error ("Fatal error: out of memory.\n");
       else
-        caml_raise_out_of_memory ();
+        caml_raise_out_of_memory (ctx);
     }
-    caml_fl_add_blocks (new_block);
-    hp = caml_fl_allocate (wosize);
+    caml_fl_add_blocks (ctx, new_block);
+    hp = caml_fl_allocate (ctx, wosize);
   }
 
   Assert (Is_in_heap (Val_hp (hp)));
@@ -431,10 +431,10 @@ CAMLexport value caml_alloc_shr (pctx ctx, mlsize_t wosize, tag_t tag)
                 && (addr)hp < (addr)ctx->caml_gc_sweep_hp));
     Hd_hp (hp) = Make_header (wosize, tag, Caml_white);
   }
-  Assert (Hd_hp (hp) == Make_header (wosize, tag, caml_allocation_color (hp)));
+  Assert (Hd_hp (hp) == Make_header (wosize, tag, caml_allocation_color (ctx, hp)));
   ctx->caml_allocated_words += Whsize_wosize (wosize);
   if (ctx->caml_allocated_words > Wsize_bsize (ctx->caml_minor_heap_size)){
-    caml_urge_major_slice ();
+    caml_urge_major_slice (ctx);
   }
 #ifdef DEBUG
   {
@@ -486,12 +486,12 @@ CAMLexport void caml_adjust_gc_speed (pctx ctx, mlsize_t res, mlsize_t max)
   ctx->caml_extra_heap_resources += (double) res / (double) max;
   if (ctx->caml_extra_heap_resources > 1.0){
     ctx->caml_extra_heap_resources = 1.0;
-    caml_urge_major_slice ();
+    caml_urge_major_slice (ctx);
   }
   if (ctx->caml_extra_heap_resources
            > (double) Wsize_bsize (ctx->caml_minor_heap_size) / 2.0
              / (double) Wsize_bsize (ctx->caml_stat_heap_size)) {
-    caml_urge_major_slice ();
+    caml_urge_major_slice (ctx);
   }
 }
 
@@ -503,13 +503,13 @@ CAMLexport void caml_adjust_gc_speed (pctx ctx, mlsize_t res, mlsize_t max)
 /* [caml_initialize] never calls the GC, so you may call it while a block is
    unfinished (i.e. just after a call to [caml_alloc_shr].) */
 /* PR#6084 workaround: define it as a weak symbol */
-CAMLexport CAMLweakdef void caml_initialize (value *fp, value val)
+CAMLexport CAMLweakdef void caml_initialize (ctx, value *fp, value val)
 {
   CAMLassert(Is_in_heap(fp));
   *fp = val;
   if (Is_block (val) && Is_young (val)) {
     if (ctx->caml_ref_table.ptr >= ctx->caml_ref_table.limit){
-      caml_realloc_ref_table (&ctx->caml_ref_table);
+      caml_realloc_ref_table (ctx, &ctx->caml_ref_table);
     }
     *ctx->caml_ref_table.ptr++ = fp;
   }
@@ -526,7 +526,7 @@ CAMLexport CAMLweakdef void caml_initialize (value *fp, value val)
    block being changed is in the minor heap or the major heap. */
 /* PR#6084 workaround: define it as a weak symbol */
 
-CAMLexport CAMLweakdef void caml_modify (value *fp, value val)
+CAMLexport CAMLweakdef void caml_modify (ctx, value *fp, value val)
 {
   /* The write barrier implemented by [caml_modify] checks for the
      following two conditions and takes appropriate action:
@@ -555,14 +555,14 @@ CAMLexport CAMLweakdef void caml_modify (value *fp, value val)
       if (Is_young(old)) return;
       /* Here, [old] can be a pointer within the major heap.
          Check for condition 2. */
-      if (ctx->caml_gc_phase == Phase_mark) caml_darken(old, NULL);
+      if (ctx->caml_gc_phase == Phase_mark) caml_darken(ctx, old, NULL);
     }
     /* Check for condition 1. */
     if (Is_block(val) && Is_young(val)) {
       /* Add [fp] to remembered set */
       if (ctx->caml_ref_table.ptr >= ctx->caml_ref_table.limit){
         CAMLassert (ctx->caml_ref_table.ptr == ctx->caml_ref_table.limit);
-        caml_realloc_ref_table (&ctx->caml_ref_table);
+        caml_realloc_ref_table (ctx, &ctx->caml_ref_table);
       }
       *ctx->caml_ref_table.ptr++ = fp;
     }
@@ -574,7 +574,7 @@ CAMLexport void * caml_stat_alloc (pctx ctx, asize_t sz)
   void * result = malloc (sz);
 
   /* malloc() may return NULL if size is 0 */
-  if (result == NULL && sz != 0) caml_raise_out_of_memory ();
+  if (result == NULL && sz != 0) caml_raise_out_of_memory (ctx);
 #ifdef DEBUG
   memset (result, Debug_uninit_stat, sz);
 #endif
@@ -590,6 +590,6 @@ CAMLexport void * caml_stat_resize (void * blk, asize_t sz)
 {
   void * result = realloc (blk, sz);
 
-  if (result == NULL) caml_raise_out_of_memory ();
+  if (result == NULL) caml_raise_out_of_memory (ctx);
   return result;
 }

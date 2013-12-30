@@ -95,7 +95,7 @@ void caml_darken (pctx ctx, value v, value *p /* not used */)
       if (t < No_scan_tag){
         Hd_val (v) = Grayhd_hd (h);
         *ctx->gray_vals_cur++ = v;
-        if (ctx->gray_vals_cur >= ctx->gray_vals_end) realloc_gray_vals ();
+        if (ctx->gray_vals_cur >= ctx->gray_vals_end) realloc_gray_vals (ctx);
       }else{
         Hd_val (v) = Blackhd_hd (h);
       }
@@ -108,7 +108,7 @@ static void start_cycle (pctx ctx)
   Assert (ctx->caml_gc_phase == Phase_idle);
   Assert (ctx->gray_vals_cur == ctx->gray_vals);
   caml_gc_message (0x01, "Starting new major GC cycle\n", 0);
-  caml_darken_all_roots();
+  caml_darken_all_roots(ctx);
   ctx->caml_gc_phase = Phase_mark;
   ctx->caml_gc_subphase = Subphase_main;
   ctx->markhp = NULL;
@@ -159,7 +159,7 @@ static void mark_slice (pctx ctx, intnat work)
               *gray_vals_ptr++ = child;
               if (gray_vals_ptr >= ctx->gray_vals_end) {
                 ctx->gray_vals_cur = gray_vals_ptr;
-                realloc_gray_vals ();
+                realloc_gray_vals (ctx);
                 gray_vals_ptr = ctx->gray_vals_cur;
               }
             }
@@ -234,7 +234,7 @@ static void mark_slice (pctx ctx, intnat work)
           /* Subphase_weak1 is done.
              Handle finalised values and start removing dead weak arrays. */
           ctx->gray_vals_cur = gray_vals_ptr;
-          caml_final_update ();
+          caml_final_update (ctx);
           gray_vals_ptr = ctx->gray_vals_cur;
           ctx->caml_gc_subphase = Subphase_weak2;
           ctx->weak_prev = &ctx->caml_weak_list_head;
@@ -265,7 +265,7 @@ static void mark_slice (pctx ctx, intnat work)
         /* Initialise the sweep phase. */
         ctx->gray_vals_cur = gray_vals_ptr;
         ctx->caml_gc_sweep_hp = ctx->caml_heap_start;
-        caml_fl_init_merge ();
+        caml_fl_init_merge (ctx);
         ctx->caml_gc_phase = Phase_sweep;
         ctx->chunk = ctx->caml_heap_start;
         ctx->caml_gc_sweep_hp = ctx->chunk;
@@ -299,7 +299,7 @@ static void sweep_slice (pctx ctx, intnat work)
           void (*final_fun)(value) = Custom_ops_val(Val_hp(hp))->finalize;
           if (final_fun != NULL) final_fun(Val_hp(hp));
         }
-        ctx->caml_gc_sweep_hp = caml_fl_merge_block (Bp_hp (hp));
+        ctx->caml_gc_sweep_hp = caml_fl_merge_block (ctx, Bp_hp (hp));
         break;
       case Caml_blue:
         /* Only the blocks of the free-list are blue.  See [freelist.c]. */
@@ -378,7 +378,7 @@ intnat caml_major_collection_slice (pctx ctx, intnat howmuch)
      This slice will either mark MS words or sweep SS words.
   */
 
-  if (ctx->caml_gc_phase == Phase_idle) start_cycle ();
+  if (ctx->caml_gc_phase == Phase_idle) start_cycle (ctx);
 
   p = (double) ctx->caml_allocated_words * 3.0 * (100 + ctx->caml_percent_free)
       / Wsize_bsize (ctx->caml_stat_heap_size) / ctx->caml_percent_free / 2.0;
@@ -411,15 +411,15 @@ intnat caml_major_collection_slice (pctx ctx, intnat howmuch)
   caml_gc_message (0x40, "computed work = %ld words\n", computed_work);
   if (howmuch == 0) howmuch = computed_work;
   if (ctx->caml_gc_phase == Phase_mark){
-    mark_slice (howmuch);
+    mark_slice (ctx, howmuch);
     caml_gc_message (0x02, "!", 0);
   }else{
     Assert (ctx->caml_gc_phase == Phase_sweep);
-    sweep_slice (howmuch);
+    sweep_slice (ctx, howmuch);
     caml_gc_message (0x02, "$", 0);
   }
 
-  if (ctx->caml_gc_phase == Phase_idle) caml_compact_heap_maybe ();
+  if (ctx->caml_gc_phase == Phase_idle) caml_compact_heap_maybe (ctx);
 
   ctx->caml_stat_major_words += ctx->caml_allocated_words;
   ctx->caml_allocated_words = 0;
@@ -437,10 +437,10 @@ intnat caml_major_collection_slice (pctx ctx, intnat howmuch)
 */
 void caml_finish_major_cycle (pctx ctx)
 {
-  if (ctx->caml_gc_phase == Phase_idle) start_cycle ();
-  while (ctx->caml_gc_phase == Phase_mark) mark_slice (LONG_MAX);
+  if (ctx->caml_gc_phase == Phase_idle) start_cycle (ctx);
+  while (ctx->caml_gc_phase == Phase_mark) mark_slice (ctx, LONG_MAX);
   Assert (ctx->caml_gc_phase == Phase_sweep);
-  while (ctx->caml_gc_phase == Phase_sweep) sweep_slice (LONG_MAX);
+  while (ctx->caml_gc_phase == Phase_sweep) sweep_slice (ctx, LONG_MAX);
   Assert (ctx->caml_gc_phase == Phase_idle);
   ctx->caml_stat_major_words += ctx->caml_allocated_words;
   ctx->caml_allocated_words = 0;
@@ -470,7 +470,7 @@ asize_t caml_round_heap_chunk_size (pctx ctx, asize_t request)
   result = clip_heap_chunk_size (result);
 
   if (result < request){
-    caml_raise_out_of_memory ();
+    caml_raise_out_of_memory (ctx);
     return 0; /* not reached */
   }
   return result;
@@ -493,8 +493,8 @@ void caml_init_major_heap (pctx ctx, asize_t heap_size)
                       "for the initial page table.\n");
   }
 
-  caml_fl_init_merge ();
-  caml_make_free_blocks ((value *) ctx->caml_heap_start,
+  caml_fl_init_merge (ctx);
+  caml_make_free_blocks (ctx, (value *) ctx->caml_heap_start,
                          Wsize_bsize (ctx->caml_stat_heap_size), 1, Caml_white);
   ctx->caml_gc_phase = Phase_idle;
   ctx->gray_vals_size = 2048;

@@ -63,31 +63,31 @@ static char * error_message(void)
 
 CAMLexport void caml_sys_error(pctx ctx, value arg)
 {
-  CAMLparam1 (arg);
+  CAMLparam1 (ctx, arg);
   char * err;
-  CAMLlocal1 (str);
+  CAMLlocal1 (ctx, str);
 
   err = error_message();
   if (arg == NO_ARG) {
-    str = caml_copy_string(err);
+    str = caml_copy_string(ctx, err);
   } else {
     int err_len = strlen(err);
     int arg_len = caml_string_length(arg);
-    str = caml_alloc_string(arg_len + 2 + err_len);
+    str = caml_alloc_string(ctx, arg_len + 2 + err_len);
     memmove(&Byte(str, 0), String_val(arg), arg_len);
     memmove(&Byte(str, arg_len), ": ", 2);
     memmove(&Byte(str, arg_len + 2), err, err_len);
   }
-  caml_raise_sys_error(str);
+  caml_raise_sys_error(ctx, str);
   CAMLnoreturn;
 }
 
 CAMLexport void caml_sys_io_error(pctx ctx, value arg)
 {
   if (errno == EAGAIN || errno == EWOULDBLOCK) {
-    caml_raise_sys_blocked_io();
+    caml_raise_sys_blocked_io(ctx);
   } else {
-    caml_sys_error(arg);
+    caml_sys_error(ctx, arg);
   }
 }
 
@@ -121,11 +121,11 @@ static int sys_open_flags[] = {
 
 CAMLprim value caml_sys_open(pctx ctx, value path, value vflags, value vperm)
 {
-  CAMLparam3(path, vflags, vperm);
+  CAMLparam3(ctx, path, vflags, vperm);
   int fd, flags, perm;
   char * p;
 
-  p = caml_stat_alloc(caml_string_length(path) + 1);
+  p = caml_stat_alloc(ctx, caml_string_length(path) + 1);
   strcpy(p, String_val(path));
   flags = caml_convert_flag_list(vflags, sys_open_flags);
   perm = Int_val(vperm);
@@ -139,8 +139,8 @@ CAMLprim value caml_sys_open(pctx ctx, value path, value vflags, value vperm)
 #endif
   caml_leave_blocking_section();
   caml_stat_free(p);
-  if (fd == -1) caml_sys_error(path);
-  CAMLreturn(Val_long(fd));
+  if (fd == -1) caml_sys_error(ctx, path);
+  CAMLreturn(ctx, Val_long(fd));
 }
 
 CAMLprim value caml_sys_close(value fd)
@@ -158,7 +158,7 @@ CAMLprim value caml_sys_file_exists(value name)
 CAMLprim value caml_sys_is_directory(pctx ctx, value name)
 {
   struct stat st;
-  if (stat(String_val(name), &st) == -1) caml_sys_error(name);
+  if (stat(String_val(name), &st) == -1) caml_sys_error(ctx, name);
 #ifdef S_ISDIR
   return Val_bool(S_ISDIR(st.st_mode));
 #else
@@ -170,20 +170,20 @@ CAMLprim value caml_sys_remove(pctx ctx, value name)
 {
   int ret;
   ret = unlink(String_val(name));
-  if (ret != 0) caml_sys_error(name);
+  if (ret != 0) caml_sys_error(ctx, name);
   return Val_unit;
 }
 
 CAMLprim value caml_sys_rename(pctx ctx, value oldname, value newname)
 {
   if (rename(String_val(oldname), String_val(newname)) != 0)
-    caml_sys_error(NO_ARG);
+    caml_sys_error(ctx, NO_ARG);
   return Val_unit;
 }
 
 CAMLprim value caml_sys_chdir(pctx ctx, value dirname)
 {
-  if (chdir(String_val(dirname)) != 0) caml_sys_error(dirname);
+  if (chdir(String_val(dirname)) != 0) caml_sys_error(ctx, dirname);
   return Val_unit;
 }
 
@@ -191,11 +191,11 @@ CAMLprim value caml_sys_getcwd(pctx ctx, value unit)
 {
   char buff[4096];
 #ifdef HAS_GETCWD
-  if (getcwd(buff, sizeof(buff)) == 0) caml_sys_error(NO_ARG);
+  if (getcwd(buff, sizeof(buff)) == 0) caml_sys_error(ctx, NO_ARG);
 #else
-  if (getwd(buff) == 0) caml_sys_error(NO_ARG);
+  if (getwd(buff) == 0) caml_sys_error(ctx, NO_ARG);
 #endif /* HAS_GETCWD */
-  return caml_copy_string(buff);
+  return caml_copy_string(ctx, buff);
 }
 
 CAMLprim value caml_sys_getenv(pctx ctx, value var)
@@ -203,8 +203,8 @@ CAMLprim value caml_sys_getenv(pctx ctx, value var)
   char * res;
 
   res = getenv(String_val(var));
-  if (res == 0) caml_raise_not_found();
-  return caml_copy_string(res);
+  if (res == 0) caml_raise_not_found(ctx);
+  return caml_copy_string(ctx, res);
 }
 
 char * caml_exe_name;
@@ -212,14 +212,14 @@ static char ** caml_main_argv;
 
 CAMLprim value caml_sys_get_argv(pctx ctx, value unit)
 {
-  CAMLparam0 ();   /* unit is unused */
-  CAMLlocal3 (exe_name, argv, res);
-  exe_name = caml_copy_string(caml_exe_name);
-  argv = caml_copy_string_array((char const **) caml_main_argv);
-  res = caml_alloc_small(2, 0);
+  CAMLparam0 (ctx);   /* unit is unused */
+  CAMLlocal3 (ctx, exe_name, argv, res);
+  exe_name = caml_copy_string(ctx, caml_exe_name);
+  argv = caml_copy_string_array(ctx, (char const **) caml_main_argv);
+  res = caml_alloc_small(ctx, 2, 0);
   Field(res, 0) = exe_name;
   Field(res, 1) = argv;
-  CAMLreturn(res);
+  CAMLreturn(ctx, res);
 }
 
 void caml_sys_init(char * exe_name, char **argv)
@@ -241,24 +241,24 @@ void caml_sys_init(char * exe_name, char **argv)
 
 CAMLprim value caml_sys_system_command(pctx ctx, value command)
 {
-  CAMLparam1 (command);
+  CAMLparam1 (ctx, command);
   int status, retcode;
   char *buf;
   intnat len;
 
   len = caml_string_length (command);
-  buf = caml_stat_alloc (len + 1);
+  buf = caml_stat_alloc (ctx, len + 1);
   memmove (buf, String_val (command), len + 1);
   caml_enter_blocking_section ();
   status = system(buf);
   caml_leave_blocking_section ();
   caml_stat_free(buf);
-  if (status == -1) caml_sys_error(command);
+  if (status == -1) caml_sys_error(ctx, command);
   if (WIFEXITED(status))
     retcode = WEXITSTATUS(status);
   else
     retcode = 255;
-  CAMLreturn (Val_int(retcode));
+  CAMLreturn (ctx, Val_int(retcode));
 }
 
 CAMLprim value caml_sys_time(pctx ctx, value unit)
@@ -267,7 +267,7 @@ CAMLprim value caml_sys_time(pctx ctx, value unit)
   struct rusage ru;
 
   getrusage (RUSAGE_SELF, &ru);
-  return caml_copy_double (ru.ru_utime.tv_sec + ru.ru_utime.tv_usec / 1e6
+  return caml_copy_double (ctx, ru.ru_utime.tv_sec + ru.ru_utime.tv_usec / 1e6
                            + ru.ru_stime.tv_sec + ru.ru_stime.tv_usec / 1e6);
 #else
   #ifdef HAS_TIMES
@@ -280,10 +280,10 @@ CAMLprim value caml_sys_time(pctx ctx, value unit)
     #endif
     struct tms t;
     times(&t);
-    return caml_copy_double((double)(t.tms_utime + t.tms_stime) / CLK_TCK);
+    return caml_copy_double(ctx, (double)(t.tms_utime + t.tms_stime) / CLK_TCK);
   #else
     /* clock() is standard ANSI C */
-    return caml_copy_double((double)clock() / CLOCKS_PER_SEC);
+    return caml_copy_double(ctx, (double)clock() / CLOCKS_PER_SEC);
   #endif
 #endif
 }
@@ -329,7 +329,7 @@ CAMLprim value caml_sys_random_seed (pctx ctx, value unit)
   }
 #endif
   /* Convert to an OCaml array of ints */
-  res = caml_alloc_small(n, 0);
+  res = caml_alloc_small(ctx, n, 0);
   for (i = 0; i < n; i++) Field(res, i) = Val_long(data[i]);
   return res;
 }
@@ -365,11 +365,11 @@ CAMLprim value caml_sys_const_ostype_cygwin(value unit)
 
 CAMLprim value caml_sys_get_config(pctx ctx, value unit)
 {
-  CAMLparam0 ();   /* unit is unused */
-  CAMLlocal2 (result, ostype);
+  CAMLparam0 (ctx);   /* unit is unused */
+  CAMLlocal2 (ctx, result, ostype);
 
-  ostype = caml_copy_string(OCAML_OS_TYPE);
-  result = caml_alloc_small (3, 0);
+  ostype = caml_copy_string(ctx, OCAML_OS_TYPE);
+  result = caml_alloc_small (ctx, 3, 0);
   Field(result, 0) = ostype;
   Field(result, 1) = Val_long (8 * sizeof(value));
 #ifdef ARCH_BIG_ENDIAN
@@ -377,22 +377,22 @@ CAMLprim value caml_sys_get_config(pctx ctx, value unit)
 #else
   Field(result, 2) = Val_false;
 #endif
-  CAMLreturn (result);
+  CAMLreturn (ctx, result);
 }
 
 CAMLprim value caml_sys_read_directory(pctx ctx, value path)
 {
-  CAMLparam1(path);
-  CAMLlocal1(result);
+  CAMLparam1(ctx, path);
+  CAMLlocal1(ctx, result);
   struct ext_table tbl;
 
   caml_ext_table_init(&tbl, 50);
   if (caml_read_directory(String_val(path), &tbl) == -1){
     caml_ext_table_free(&tbl, 1);
-    caml_sys_error(path);
+    caml_sys_error(ctx, path);
   }
   caml_ext_table_add(&tbl, NULL);
-  result = caml_copy_string_array((char const **) tbl.contents);
+  result = caml_copy_string_array(ctx, (char const **) tbl.contents);
   caml_ext_table_free(&tbl, 1);
-  CAMLreturn(result);
+  CAMLreturn(ctx, result);
 }

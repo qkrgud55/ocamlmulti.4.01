@@ -49,8 +49,8 @@ static void compare_free_stack(pctx ctx)
 static void compare_stack_overflow(pctx ctx)
 {
   caml_gc_message (0x04, "Stack overflow in structural comparison\n", 0);
-  compare_free_stack();
-  caml_raise_out_of_memory();
+  compare_free_stack(ctx);
+  caml_raise_out_of_memory(ctx);
 }
 
 /* Grow the compare stack */
@@ -60,16 +60,16 @@ static struct compare_item * compare_resize_stack(pctx ctx, struct compare_item 
   asize_t sp_offset = sp - ctx->compare_stack;
   struct compare_item * newstack;
 
-  if (newsize >= COMPARE_STACK_MAX_SIZE) compare_stack_overflow();
+  if (newsize >= COMPARE_STACK_MAX_SIZE) compare_stack_overflow(ctx);
   if (ctx->compare_stack == ctx->compare_stack_init) {
     newstack = malloc(sizeof(struct compare_item) * newsize);
-    if (newstack == NULL) compare_stack_overflow();
+    if (newstack == NULL) compare_stack_overflow(ctx);
     memcpy(newstack, ctx->compare_stack_init,
            sizeof(struct compare_item) * COMPARE_STACK_INIT_SIZE);
   } else {
     newstack =
       realloc(ctx->compare_stack, sizeof(struct compare_item) * newsize);
-    if (newstack == NULL) compare_stack_overflow();
+    if (newstack == NULL) compare_stack_overflow(ctx);
   }
   ctx->compare_stack = newstack;
   ctx->compare_stack_limit = newstack + newsize;
@@ -204,12 +204,12 @@ static intnat compare_val(pctx ctx, value v1, value v2, int total)
       break;
     }
     case Abstract_tag:
-      compare_free_stack();
-      caml_invalid_argument("equal: abstract value");
+      compare_free_stack(ctx);
+      caml_invalid_argument(ctx, "equal: abstract value");
     case Closure_tag:
     case Infix_tag:
-      compare_free_stack();
-      caml_invalid_argument("equal: functional value");
+      compare_free_stack(ctx);
+      caml_invalid_argument(ctx, "equal: functional value");
     case Object_tag: {
       intnat oid1 = Oid_val(v1);
       intnat oid2 = Oid_val(v2);
@@ -226,8 +226,8 @@ static intnat compare_val(pctx ctx, value v1, value v2, int total)
                ? LESS : GREATER;
       }
       if (compare == NULL) {
-        compare_free_stack();
-        caml_invalid_argument("equal: abstract value");
+        compare_free_stack(ctx);
+        caml_invalid_argument(ctx, "equal: abstract value");
       }
       ctx->caml_compare_unordered = 0;
       res = compare(v1, v2);
@@ -244,7 +244,7 @@ static intnat compare_val(pctx ctx, value v1, value v2, int total)
       /* Remember that we still have to compare fields 1 ... sz - 1 */
       if (sz1 > 1) {
         sp++;
-        if (sp >= ctx->compare_stack_limit) sp = compare_resize_stack(sp);
+        if (sp >= ctx->compare_stack_limit) sp = compare_resize_stack(ctx, sp);
         sp->v1 = &Field(v1, 1);
         sp->v2 = &Field(v2, 1);
         sp->count = sz1 - 1;
@@ -266,9 +266,9 @@ static intnat compare_val(pctx ctx, value v1, value v2, int total)
 
 CAMLprim value caml_compare(pctx ctx, value v1, value v2)
 {
-  intnat res = compare_val(v1, v2, 1);
+  intnat res = compare_val(ctx, v1, v2, 1);
   /* Free stack if needed */
-  if (ctx->compare_stack != ctx->compare_stack_init) compare_free_stack();
+  if (ctx->compare_stack != ctx->compare_stack_init) compare_free_stack(ctx);
   if (res < 0)
     return Val_int(LESS);
   else if (res > 0)
@@ -279,42 +279,42 @@ CAMLprim value caml_compare(pctx ctx, value v1, value v2)
 
 CAMLprim value caml_equal(pctx ctx, value v1, value v2)
 {
-  intnat res = compare_val(v1, v2, 0);
-  if (ctx->compare_stack != ctx->compare_stack_init) compare_free_stack();
+  intnat res = compare_val(ctx, v1, v2, 0);
+  if (ctx->compare_stack != ctx->compare_stack_init) compare_free_stack(ctx);
   return Val_int(res == 0);
 }
 
 CAMLprim value caml_notequal(pctx ctx, value v1, value v2)
 {
-  intnat res = compare_val(v1, v2, 0);
-  if (ctx->compare_stack != ctx->compare_stack_init) compare_free_stack();
+  intnat res = compare_val(ctx, v1, v2, 0);
+  if (ctx->compare_stack != ctx->compare_stack_init) compare_free_stack(ctx);
   return Val_int(res != 0);
 }
 
 CAMLprim value caml_lessthan(pctx ctx, value v1, value v2)
 {
-  intnat res = compare_val(v1, v2, 0);
-  if (ctx->compare_stack != ctx->compare_stack_init) compare_free_stack();
+  intnat res = compare_val(ctx, v1, v2, 0);
+  if (ctx->compare_stack != ctx->compare_stack_init) compare_free_stack(ctx);
   return Val_int(res < 0 && res != UNORDERED);
 }
 
 CAMLprim value caml_lessequal(pctx ctx, value v1, value v2)
 {
-  intnat res = compare_val(v1, v2, 0);
-  if (ctx->compare_stack != ctx->compare_stack_init) compare_free_stack();
+  intnat res = compare_val(ctx, v1, v2, 0);
+  if (ctx->compare_stack != ctx->compare_stack_init) compare_free_stack(ctx);
   return Val_int(res <= 0 && res != UNORDERED);
 }
 
 CAMLprim value caml_greaterthan(pctx ctx, value v1, value v2)
 {
-  intnat res = compare_val(v1, v2, 0);
-  if (ctx->compare_stack != ctx->compare_stack_init) compare_free_stack();
+  intnat res = compare_val(ctx, v1, v2, 0);
+  if (ctx->compare_stack != ctx->compare_stack_init) compare_free_stack(ctx);
   return Val_int(res > 0);
 }
 
 CAMLprim value caml_greaterequal(pctx ctx, value v1, value v2)
 {
-  intnat res = compare_val(v1, v2, 0);
-  if (ctx->compare_stack != ctx->compare_stack_init) compare_free_stack();
+  intnat res = compare_val(ctx, v1, v2, 0);
+  if (ctx->compare_stack != ctx->compare_stack_init) compare_free_stack(ctx);
   return Val_int(res >= 0);
 }

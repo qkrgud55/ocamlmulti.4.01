@@ -61,7 +61,7 @@ CAMLextern int caml_compare_unordered;
 /* <private> */
 extern struct custom_operations * caml_find_custom_operations(pctx ctx, char * ident);
 extern struct custom_operations *
-          caml_final_custom_operations(void (*fn)(value));
+          caml_final_custom_operations(ctx, void (*fn)(value));
 
 extern void caml_init_custom_operations(pctx ctx);
 /* </private> */

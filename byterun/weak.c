@@ -32,8 +32,8 @@ CAMLprim value caml_weak_create (pctx ctx, value len)
   value res;
 
   size = Long_val (len) + 1;
-  if (size <= 0 || size > Max_wosize) caml_invalid_argument ("Weak.create");
-  res = caml_alloc_shr (size, Abstract_tag);
+  if (size <= 0 || size > Max_wosize) caml_invalid_argument (ctx, "Weak.create");
+  res = caml_alloc_shr (ctx, size, Abstract_tag);
   for (i = 1; i < size; i++) Field (res, i) = ctx->caml_weak_none;
   Field (res, 0) = ctx->caml_weak_list_head;
   ctx->caml_weak_list_head = res;
@@ -52,7 +52,7 @@ static void do_set (pctx ctx, value ar, mlsize_t offset, value v)
     if (!(Is_block (old) && Is_young (old))){
       if (ctx->caml_weak_ref_table.ptr >= ctx->caml_weak_ref_table.limit){
         CAMLassert (ctx->caml_weak_ref_table.ptr == ctx->caml_weak_ref_table.limit);
-        caml_realloc_ref_table (&ctx->caml_weak_ref_table);
+        caml_realloc_ref_table (ctx, &ctx->caml_weak_ref_table);
       }
       *ctx->caml_weak_ref_table.ptr++ = &Field (ar, offset);
     }
@@ -66,11 +66,11 @@ CAMLprim value caml_weak_set (pctx ctx, value ar, value n, value el)
   mlsize_t offset = Long_val (n) + 1;
                                                    Assert (Is_in_heap (ar));
   if (offset < 1 || offset >= Wosize_val (ar)){
-    caml_invalid_argument ("Weak.set");
+    caml_invalid_argument (ctx, "Weak.set");
   }
   if (el != None_val && Is_block (el)){
                                               Assert (Wosize_val (el) == 1);
-    do_set (ar, offset, Field (el, 0));
+    do_set (ctx, ar, offset, Field (el, 0));
   }else{
     Field (ar, offset) = ctx->caml_weak_none;
   }
@@ -82,24 +82,24 @@ CAMLprim value caml_weak_set (pctx ctx, value ar, value n, value el)
 
 CAMLprim value caml_weak_get (pctx ctx, value ar, value n)
 {
-  CAMLparam2 (ar, n);
+  CAMLparam2 (ctx, ar, n);
   mlsize_t offset = Long_val (n) + 1;
-  CAMLlocal2 (res, elt);
+  CAMLlocal2 (ctx, res, elt);
                                                    Assert (Is_in_heap (ar));
   if (offset < 1 || offset >= Wosize_val (ar)){
-    caml_invalid_argument ("Weak.get");
+    caml_invalid_argument (ctx, "Weak.get");
   }
   if (Field (ar, offset) == ctx->caml_weak_none){
     res = None_val;
   }else{
     elt = Field (ar, offset);
     if (ctx->caml_gc_phase == Phase_mark && Is_block (elt) && Is_in_heap (elt)){
-      caml_darken (elt, NULL);
+      caml_darken (ctx, elt, NULL);
     }
-    res = caml_alloc_small (1, Some_tag);
+    res = caml_alloc_small (ctx, 1, Some_tag);
     Field (res, 0) = elt;
   }
-  CAMLreturn (res);
+  CAMLreturn (ctx, res);
 }
 
 #undef Setup_for_gc
@@ -107,28 +107,28 @@ CAMLprim value caml_weak_get (pctx ctx, value ar, value n)
 
 CAMLprim value caml_weak_get_copy (pctx ctx, value ar, value n)
 {
-  CAMLparam2 (ar, n);
+  CAMLparam2 (ctx, ar, n);
   mlsize_t offset = Long_val (n) + 1;
-  CAMLlocal2 (res, elt);
+  CAMLlocal2 (ctx, res, elt);
   value v;  /* Caution: this is NOT a local root. */
                                                    Assert (Is_in_heap (ar));
   if (offset < 1 || offset >= Wosize_val (ar)){
-    caml_invalid_argument ("Weak.get");
+    caml_invalid_argument (ctx, "Weak.get");
   }
 
   v = Field (ar, offset);
-  if (v == ctx->caml_weak_none) CAMLreturn (None_val);
+  if (v == ctx->caml_weak_none) CAMLreturn (ctx, None_val);
   if (Is_block (v) && Is_in_heap_or_young(v)) {
-    elt = caml_alloc (Wosize_val (v), Tag_val (v));
+    elt = caml_alloc (ctx, Wosize_val (v), Tag_val (v));
           /* The GC may erase or move v during this call to caml_alloc. */
     v = Field (ar, offset);
-    if (v == ctx->caml_weak_none) CAMLreturn (None_val);
+    if (v == ctx->caml_weak_none) CAMLreturn (ctx, None_val);
     if (Tag_val (v) < No_scan_tag){
       mlsize_t i;
       for (i = 0; i < Wosize_val (v); i++){
         value f = Field (v, i);
         if (ctx->caml_gc_phase == Phase_mark && Is_block (f) && Is_in_heap (f)){
-          caml_darken (f, NULL);
+          caml_darken (ctx, f, NULL);
         }
         Modify (&Field (elt, i), f);
       }
@@ -138,10 +138,10 @@ CAMLprim value caml_weak_get_copy (pctx ctx, value ar, value n)
   }else{
     elt = v;
   }
-  res = caml_alloc_small (1, Some_tag);
+  res = caml_alloc_small (ctx, 1, Some_tag);
   Field (res, 0) = elt;
 
-  CAMLreturn (res);
+  CAMLreturn (ctx, res);
 }
 
 CAMLprim value caml_weak_check (pctx ctx, value ar, value n)
@@ -149,7 +149,7 @@ CAMLprim value caml_weak_check (pctx ctx, value ar, value n)
   mlsize_t offset = Long_val (n) + 1;
                                                    Assert (Is_in_heap (ar));
   if (offset < 1 || offset >= Wosize_val (ar)){
-    caml_invalid_argument ("Weak.get");
+    caml_invalid_argument (ctx, "Weak.get");
   }
   return Val_bool (Field (ar, offset) != ctx->caml_weak_none);
 }
@@ -164,10 +164,10 @@ CAMLprim value caml_weak_blit (pctx ctx, value ars, value ofs,
                                                    Assert (Is_in_heap (ars));
                                                    Assert (Is_in_heap (ard));
   if (offset_s < 1 || offset_s + length > Wosize_val (ars)){
-    caml_invalid_argument ("Weak.blit");
+    caml_invalid_argument (ctx, "Weak.blit");
   }
   if (offset_d < 1 || offset_d + length > Wosize_val (ard)){
-    caml_invalid_argument ("Weak.blit");
+    caml_invalid_argument (ctx, "Weak.blit");
   }
   if (ctx->caml_gc_phase == Phase_mark && ctx->caml_gc_subphase == Subphase_weak1){
     for (i = 0; i < length; i++){
@@ -180,11 +180,11 @@ CAMLprim value caml_weak_blit (pctx ctx, value ars, value ofs,
   }
   if (offset_d < offset_s){
     for (i = 0; i < length; i++){
-      do_set (ard, offset_d + i, Field (ars, offset_s + i));
+      do_set (ctx, ard, offset_d + i, Field (ars, offset_s + i));
     }
   }else{
     for (i = length - 1; i >= 0; i--){
-      do_set (ard, offset_d + i,  Field (ars, offset_s + i));
+      do_set (ctx, ard, offset_d + i,  Field (ars, offset_s + i));
     }
   }
   return Val_unit;
