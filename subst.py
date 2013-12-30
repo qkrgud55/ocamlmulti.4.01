@@ -246,7 +246,7 @@ def handle_line_var(filepath, lines, idx, line):
 
 
 def handle_line_call(filepath, lines, idx, line):
-  global no_count, skip_num
+  global no_count, skip_num, funset
 
   it = 0
   while True:
@@ -254,6 +254,7 @@ def handle_line_call(filepath, lines, idx, line):
     if m: 
       it += m.span()[1]
       continue  # already reetrant
+
     m = re.search(r'([a-zA-Z0-9_]+)\s*(\()', line[it:])
     if not m: break
     fun_name = str.strip(m.groups()[0])
@@ -266,9 +267,9 @@ def handle_line_call(filepath, lines, idx, line):
     print filepath
     print '-'*50
     
-    start = idx - 15
+    start = idx - 13
     if start < 0: start = 0
-    end = idx + 13
+    end = idx + 11
     if end > len(lines):
       end = len(lines)
     for it1 in range(start,end):
